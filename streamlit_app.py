@@ -64,10 +64,6 @@ with col2:
 with col3:
     st.metric('Price Range', f"RM {data['Median_Price'].min():.0f} - RM {data['Median_Price'].max():.0f}")
 
-st.markdown('---')
-st.subheader('Raw Data Sample')
-st.dataframe(data.head(10), use_container_width=True)
-
 # =========================
 # Build and train model
 # =========================
