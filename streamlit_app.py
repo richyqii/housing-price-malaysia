@@ -690,26 +690,36 @@ with tab3:
 with tab4:
     st.header('🔍 Filter & Predict Housing Price')
     
-    st.markdown('**Select township and system will auto-fill other properties based on available data**')
+    st.markdown('**Select Township and Median Price - System will auto-fill other properties**')
     st.markdown('---')
     
-    # Step 1: User selects Township
-    townships = sorted(data['Township'].unique())
-    selected_township = st.selectbox('Township', townships, key='township_filter')
+    # Step 1: User selects Township and Price Category
+    col1, col2 = st.columns(2)
     
-    # Filter data by township
-    township_data = data[data['Township'] == selected_township]
+    with col1:
+        townships = sorted(data['Township'].unique())
+        selected_township = st.selectbox('Township', townships, key='township_filter')
     
-    # Step 2: Get available Areas for this Township (Auto-fill)
-    available_areas = sorted(township_data['Area'].unique())
+    with col2:
+        price_categories = ['Low', 'Medium', 'High']
+        selected_price_cat = st.selectbox('Median Price Category', price_categories, key='price_cat_filter')
+    
+    # Convert price category to number
+    price_cat_num = 0 if selected_price_cat == 'Low' else (1 if selected_price_cat == 'Medium' else 2)
+    
+    # Filter data by township AND price category
+    township_price_data = data[(data['Township'] == selected_township) & (data['Price_Category'] == price_cat_num)]
+    
+    # Step 2: Get available Areas (Auto-fill)
+    available_areas = sorted(township_price_data['Area'].unique())
     selected_area = available_areas[0] if len(available_areas) > 0 else None
     st.info(f'Area: **{selected_area}** (Auto-filled)')
     
-    # Filter data by township and area
-    township_area_data = township_data[township_data['Area'] == selected_area]
+    # Filter data by township, price category, and area
+    township_price_area_data = township_price_data[township_price_data['Area'] == selected_area]
     
-    # Step 3: Get available States for this Township+Area
-    available_states = sorted(township_area_data['State'].unique())
+    # Step 3: Get available States (Auto-fill if only one)
+    available_states = sorted(township_price_area_data['State'].unique())
     
     if len(available_states) == 1:
         selected_state = available_states[0]
@@ -717,12 +727,12 @@ with tab4:
     else:
         selected_state = st.selectbox('State', available_states, key='state_filter')
     
-    # Filter data by township, area, and state
-    township_area_state_data = township_area_data[township_area_data['State'] == selected_state]
+    # Filter data by township, price category, area, and state
+    township_price_area_state_data = township_price_area_data[township_price_area_data['State'] == selected_state]
     
-    # Step 4: Get available Tenures and Types
-    available_tenures = sorted(township_area_state_data['Tenure'].unique())
-    available_types = sorted(township_area_state_data['Type'].unique())
+    # Step 4: Get available Tenures and Types (Auto-fill if only one)
+    available_tenures = sorted(township_price_area_state_data['Tenure'].unique())
+    available_types = sorted(township_price_area_state_data['Type'].unique())
     
     col1, col2 = st.columns(2)
     
@@ -748,7 +758,8 @@ with tab4:
         (data['Area'] == selected_area) &
         (data['State'] == selected_state) &
         (data['Tenure'] == selected_tenure) &
-        (data['Type'] == selected_type)
+        (data['Type'] == selected_type) &
+        (data['Price_Category'] == price_cat_num)
     ]
     
     # Display results
@@ -761,8 +772,8 @@ with tab4:
         median_psf = filtered_data['Median_PSF'].iloc[0] if len(filtered_data) > 0 else 0
         transactions = filtered_data['Transactions'].iloc[0] if len(filtered_data) > 0 else 0
         
-        # Categorize price
-        price_category = 'Low' if median_price < low else ('Medium' if median_price < high else 'High')
+        # Use selected price category
+        price_category = selected_price_cat
         
         # Choose color based on category
         if price_category == 'Low':
