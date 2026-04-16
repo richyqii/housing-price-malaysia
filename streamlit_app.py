@@ -77,6 +77,18 @@ def prepare_model_data(data):
     X = data.drop(columns=['Median_Price', 'Price_Category'])
     y = data['Price_Category']
     
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.3, random_state=42, stratify=y
+    )
+    
+    return X_train, X_test, y_train, y_test
+
+X_train, X_test, y_train, y_test = prepare_model_data(data)
+
+# =========================
+# Helper function to create preprocessor
+# =========================
+def create_preprocessor():
     categorical_features = ['Township', 'Area', 'State', 'Tenure', 'Type']
     numerical_features = ['Median_PSF', 'Transactions']
     
@@ -95,19 +107,14 @@ def prepare_model_data(data):
         ('cat', categorical_transformer, categorical_features)
     ])
     
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.3, random_state=42, stratify=y
-    )
-    
-    return X_train, X_test, y_train, y_test, preprocessor
-
-X_train, X_test, y_train, y_test, preprocessor = prepare_model_data(data)
+    return preprocessor
 
 # =========================
 # Train Decision Tree Model
 # =========================
 @st.cache_data
-def train_decision_tree(X_train, X_test, y_train, y_test, preprocessor):
+def train_decision_tree(X_train, X_test, y_train, y_test):
+    preprocessor = create_preprocessor()
     model = Pipeline([
         ('preprocessor', preprocessor),
         ('dt', DecisionTreeClassifier(random_state=42))
@@ -125,7 +132,8 @@ def train_decision_tree(X_train, X_test, y_train, y_test, preprocessor):
 # Train Random Forest Model
 # =========================
 @st.cache_data
-def train_random_forest(X_train, X_test, y_train, y_test, preprocessor):
+def train_random_forest(X_train, X_test, y_train, y_test):
+    preprocessor = create_preprocessor()
     model = Pipeline([
         ('preprocessor', preprocessor),
         ('rf', RandomForestClassifier(random_state=42))
@@ -143,7 +151,8 @@ def train_random_forest(X_train, X_test, y_train, y_test, preprocessor):
 # Train SVM Model with Hyperparameter Tuning
 # =========================
 @st.cache_data
-def train_svm(X_train, X_test, y_train, y_test, preprocessor):
+def train_svm(X_train, X_test, y_train, y_test):
+    preprocessor = create_preprocessor()
     pipeline = Pipeline([
         ('preprocessor', preprocessor),
         ('svm', SVC(probability=True, random_state=42))
@@ -188,9 +197,9 @@ def train_svm(X_train, X_test, y_train, y_test, preprocessor):
     return best_model, y_train_pred, y_test_pred, y_test_proba, grid.best_params_, grid.best_score_
 
 # Train all models
-dt_model, dt_train_pred, dt_test_pred, dt_test_proba = train_decision_tree(X_train, X_test, y_train, y_test, preprocessor)
-rf_model, rf_train_pred, rf_test_pred, rf_test_proba = train_random_forest(X_train, X_test, y_train, y_test, preprocessor)
-svm_model, svm_train_pred, svm_test_pred, svm_test_proba, svm_best_params, svm_best_score = train_svm(X_train, X_test, y_train, y_test, preprocessor)
+dt_model, dt_train_pred, dt_test_pred, dt_test_proba = train_decision_tree(X_train, X_test, y_train, y_test)
+rf_model, rf_train_pred, rf_test_pred, rf_test_proba = train_random_forest(X_train, X_test, y_train, y_test)
+svm_model, svm_train_pred, svm_test_pred, svm_test_proba, svm_best_params, svm_best_score = train_svm(X_train, X_test, y_train, y_test)
 
 # =========================
 # Create tabs for each model
