@@ -844,30 +844,32 @@ with tab4:
             same_category_data = data[data['Price_Category'] == category_num]
             type_psf = same_category_data.groupby('Type')['Median_PSF'].median().sort_values(ascending=False)
             
-            # Highlight selected type
-            colors_type = []
-            for ptype in type_psf.index:
-                if ptype == selected_type:
-                    colors_type.append('#FF6B6B')  # Bright red for selected
-                else:
-                    colors_type.append('#4472C4')  # Blue for others
+            # Remove duplicates by getting unique values
+            type_psf = type_psf[~type_psf.duplicated()]
+            
+            # Get color for line based on selected type
+            line_color = '#FF6B6B' if selected_type in type_psf.index else '#4472C4'
             
             fig, ax = plt.subplots(figsize=(8, 5))
-            bars = ax.bar(range(len(type_psf)), type_psf.values, color=colors_type, 
-                          edgecolor='black', linewidth=2)
             
-            # Add value labels
-            for i, bar in enumerate(bars):
-                height = bar.get_height()
-                ax.text(bar.get_x() + bar.get_width()/2., height,
-                       f'RM {height:.2f}',
-                       ha='center', va='bottom', fontweight='bold', fontsize=9)
+            # Plot line chart
+            x_pos = range(len(type_psf))
+            ax.plot(x_pos, type_psf.values, marker='o', color=line_color, linewidth=3, 
+                   markersize=10, label=selected_type if selected_type in type_psf.index else 'Type')
             
-            ax.set_ylabel('Median PSF (RM)')
+            # Highlight selected type marker
+            for i, (ptype, value) in enumerate(zip(type_psf.index, type_psf.values)):
+                if ptype == selected_type:
+                    ax.scatter([i], [value], color='#FF6B6B', s=200, zorder=5, edgecolors='black', linewidth=2)
+                    # Add label only for selected point
+                    ax.text(i, value, f'{value:.2f}', ha='center', va='bottom', 
+                           fontweight='bold', fontsize=9)
+            
+            ax.set_ylabel('Median PSF (RM)', fontsize=11, fontweight='bold')
             ax.set_title(f'{price_category} Category - PSF by Type', fontsize=12, fontweight='bold')
-            ax.set_xticks(range(len(type_psf)))
+            ax.set_xticks(x_pos)
             ax.set_xticklabels(type_psf.index, rotation=45, ha='right')
-            ax.grid(axis='y', alpha=0.3)
+            ax.grid(axis='y', alpha=0.3, linestyle='--')
             st.pyplot(fig)
         
         st.markdown('---')
