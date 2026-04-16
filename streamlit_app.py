@@ -800,84 +800,101 @@ with tab4:
         # Display visualizations
         st.subheader('📊 Market Visualizations')
         
-        # Visualization 1: Price Comparison - Selected vs Market
+        # Visualization 1: Price Category Distribution - Highlight Selected
         col1, col2 = st.columns(2)
         
         with col1:
-            st.markdown('**Price Category Distribution**')
+            st.markdown('**Price Category Distribution (Your Selection Highlighted)**')
             # Get price category breakdown across all market
             category_counts = data['Price_Category'].value_counts().sort_index()
             category_labels = ['Low', 'Medium', 'High']
-            colors_chart = ['#90EE90', '#FFD700', '#FFB6C6']
             
-            fig, ax = plt.subplots(figsize=(6, 4))
-            ax.bar(category_labels, [category_counts.get(i, 0) for i in [0, 1, 2]], color=colors_chart)
-            ax.set_title('Market Price Distribution')
+            # Highlight selected category
+            colors_dist = []
+            for i, label in enumerate(category_labels):
+                if (i == 0 and price_category == 'Low') or \
+                   (i == 1 and price_category == 'Medium') or \
+                   (i == 2 and price_category == 'High'):
+                    colors_dist.append('#FF6B6B')  # Bright red for selected
+                else:
+                    colors_dist.append('#B8B8B8')  # Gray for others
+            
+            fig, ax = plt.subplots(figsize=(8, 5))
+            bars = ax.bar(category_labels, [category_counts.get(i, 0) for i in [0, 1, 2]], 
+                          color=colors_dist, edgecolor='black', linewidth=2)
+            
+            # Add value labels on bars
+            for bar in bars:
+                height = bar.get_height()
+                ax.text(bar.get_x() + bar.get_width()/2., height,
+                       f'{int(height)}',
+                       ha='center', va='bottom', fontweight='bold')
+            
+            ax.set_title(f'Your Property is in "{price_category}" Category', fontsize=12, fontweight='bold')
             ax.set_ylabel('Number of Properties')
             ax.set_xlabel('Price Category')
+            ax.grid(axis='y', alpha=0.3)
             st.pyplot(fig)
         
         with col2:
-            st.markdown('**Selected Property Position**')
-            # Highlight where selected property sits
-            comparison_data = pd.DataFrame({
-                'Selected': [1] if price_category == 'Low' else [0],
-                'Category': ['Low']
-            }) if price_category == 'Low' else (pd.DataFrame({
-                'Selected': [1] if price_category == 'Medium' else [0],
-                'Category': ['Medium']
-            }) if price_category == 'Medium' else pd.DataFrame({
-                'Selected': [1],
-                'Category': ['High']
-            }))
+            st.markdown('**Median PSF by Type (Your Selection Highlighted)**')
+            type_psf = data.groupby('Type')['Median_PSF'].median().sort_values(ascending=False)
             
-            fig, ax = plt.subplots(figsize=(6, 4))
-            categories = ['Low', 'Medium', 'High']
-            position = [1 if c == price_category else 0 for c in categories]
-            colors_pos = ['#90EE90' if c == price_category else '#E0E0E0' for c in categories]
+            # Highlight selected type
+            colors_type = []
+            for ptype in type_psf.index:
+                if ptype == selected_type:
+                    colors_type.append('#FF6B6B')  # Bright red for selected
+                else:
+                    colors_type.append('#B8B8B8')  # Gray for others
             
-            ax.bar(categories, [1, 1, 1], color=colors_pos, alpha=0.7, edgecolor='black', linewidth=2)
-            ax.set_title('Your Selected Property')
-            ax.set_ylabel('Category Level')
-            ax.set_ylim(0, 1.3)
-            ax.axhline(y=1, color='red', linestyle='--', linewidth=2, label='Your Property')
-            ax.legend()
+            fig, ax = plt.subplots(figsize=(8, 5))
+            bars = ax.barh(type_psf.index, type_psf.values, color=colors_type, 
+                           edgecolor='black', linewidth=2)
+            
+            # Add value labels
+            for i, bar in enumerate(bars):
+                width = bar.get_width()
+                ax.text(width, bar.get_y() + bar.get_height()/2.,
+                       f' RM {width:.2f}',
+                       ha='left', va='center', fontweight='bold')
+            
+            ax.set_xlabel('Median PSF (RM)')
+            ax.set_title(f'Your Property Type: "{selected_type}"', fontsize=12, fontweight='bold')
+            ax.invert_yaxis()
+            ax.grid(axis='x', alpha=0.3)
             st.pyplot(fig)
         
         st.markdown('---')
         
-        # Visualization 2: Price per Square Foot - State Comparison
-        col3, col4 = st.columns(2)
+        # Visualization 2: Median Price by State - Highlight Selected
+        st.markdown('**Median Price by State (Your Selection Highlighted)**')
+        state_prices = data.groupby('State')['Median_Price'].median().sort_values(ascending=False)
         
-        with col3:
-            st.markdown('**Median Price by State**')
-            state_prices = data.groupby('State')['Median_Price'].median().sort_values(ascending=False).head(10)
-            
-            fig, ax = plt.subplots(figsize=(8, 5))
-            bars = ax.barh(state_prices.index, state_prices.values, color='steelblue')
-            # Highlight selected state
-            for i, state in enumerate(state_prices.index):
-                if state == selected_state:
-                    bars[i].set_color('orange')
-            ax.set_xlabel('Median Price (RM)')
-            ax.set_title('Top 10 States by Median Price')
-            ax.invert_yaxis()
-            st.pyplot(fig)
+        # Highlight selected state
+        colors_state = []
+        for state in state_prices.index:
+            if state == selected_state:
+                colors_state.append('#FF6B6B')  # Bright red for selected
+            else:
+                colors_state.append('#4472C4')  # Blue for others
         
-        with col4:
-            st.markdown('**Median PSF by Type**')
-            type_psf = data.groupby('Type')['Median_PSF'].median().sort_values(ascending=False)
-            
-            fig, ax = plt.subplots(figsize=(8, 5))
-            bars = ax.barh(type_psf.index, type_psf.values, color='seagreen')
-            # Highlight selected type
-            for i, ptype in enumerate(type_psf.index):
-                if ptype == selected_type:
-                    bars[i].set_color('orange')
-            ax.set_xlabel('Median PSF (RM)')
-            ax.set_title('Median Price per Square Foot by Type')
-            ax.invert_yaxis()
-            st.pyplot(fig)
+        fig, ax = plt.subplots(figsize=(12, 6))
+        bars = ax.barh(state_prices.index, state_prices.values, color=colors_state, 
+                       edgecolor='black', linewidth=1.5)
+        
+        # Add value labels
+        for i, bar in enumerate(bars):
+            width = bar.get_width()
+            ax.text(width, bar.get_y() + bar.get_height()/2.,
+                   f' RM {width:,.0f}',
+                   ha='left', va='center', fontsize=9, fontweight='bold')
+        
+        ax.set_xlabel('Median Price (RM)', fontsize=11, fontweight='bold')
+        ax.set_title(f'Your State: "{selected_state}" (Highlighted in Red)', fontsize=12, fontweight='bold')
+        ax.invert_yaxis()
+        ax.grid(axis='x', alpha=0.3)
+        st.pyplot(fig)
         
         st.markdown('---')
         
