@@ -890,12 +890,11 @@ with tab4:
                    verticalalignment='top')
             
             # Add annotations far from the chart for selected, one higher, and one lower
-            label_offset_up = range_val * 0.2
-            label_offset_down = range_val * 0.15
-            label_offset_side = len(type_psf) * 0.15
+            label_offset_up = range_val * 0.3
+            label_offset_down = range_val * 0.25
             
             if selected_idx is not None:
-                # Selected point - RED - at top
+                # Selected point - RED - above with up arrow
                 ax.annotate(f'Your: {selected_value:.2f}', xy=(selected_idx, selected_value), 
                            xytext=(selected_idx, max_val + label_offset_up),
                            fontsize=11, fontweight='bold', color='#FF6B6B',
@@ -903,19 +902,19 @@ with tab4:
                            arrowprops=dict(arrowstyle='->', color='#FF6B6B', lw=2.5))
             
             if right_idx is not None:
-                # Right neighbor - GREEN - right side with arrow
+                # Right neighbor - GREEN - above with up arrow
                 ax.annotate(f'Next: {right_value:.2f}', xy=(right_idx, right_value), 
-                           xytext=(right_idx + label_offset_side, right_value),
+                           xytext=(right_idx, max_val + label_offset_up * 0.7),
                            fontsize=10, fontweight='bold', color='#70AD47',
-                           ha='left', 
+                           ha='center', 
                            arrowprops=dict(arrowstyle='->', color='#70AD47', lw=2))
             
             if left_idx is not None:
-                # Left neighbor - ORANGE - left side with arrow
+                # Left neighbor - ORANGE - below with down arrow
                 ax.annotate(f'Prev: {left_value:.2f}', xy=(left_idx, left_value), 
-                           xytext=(left_idx - label_offset_side, left_value),
+                           xytext=(left_idx, min_val - label_offset_down),
                            fontsize=10, fontweight='bold', color='#FFA500',
-                           ha='right', 
+                           ha='center', 
                            arrowprops=dict(arrowstyle='->', color='#FFA500', lw=2))
             
             ax.set_ylabel('Median PSF', fontsize=11, fontweight='bold')
@@ -923,7 +922,7 @@ with tab4:
             ax.set_xticks(x_pos)
             ax.set_xticklabels(type_psf.index, rotation=45, ha='right')
             ax.grid(axis='y', alpha=0.3, linestyle='--')
-            ax.set_ylim(min_val - label_offset_down * 1.2, max_val + label_offset_up * 1.2)
+            ax.set_ylim(min_val - label_offset_down * 1.5, max_val + label_offset_up * 1.5)
             st.pyplot(fig)
         
         st.markdown('---')
