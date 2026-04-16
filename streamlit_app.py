@@ -938,30 +938,85 @@ with tab4:
             same_category_data = data[data['Price_Category'] == category_num]
             type_transactions = same_category_data.groupby('Type')['Transactions'].sum().sort_values(ascending=False)
             
-            # Highlight selected type
-            colors_trans = []
-            for ptype in type_transactions.index:
-                if ptype == selected_type:
-                    colors_trans.append('#FF6B6B')  # Bright red for selected
-                else:
-                    colors_trans.append('#70AD47')  # Green for others
+            # Remove duplicates
+            type_transactions = type_transactions[~type_transactions.duplicated()]
             
-            fig, ax = plt.subplots(figsize=(8, 5))
-            bars = ax.bar(range(len(type_transactions)), type_transactions.values, color=colors_trans,
-                          edgecolor='black', linewidth=2)
+            # Get color for line
+            line_color = '#FF6B6B' if selected_type in type_transactions.index else '#4472C4'
             
-            # Add value labels
-            for i, bar in enumerate(bars):
-                height = bar.get_height()
-                ax.text(bar.get_x() + bar.get_width()/2., height,
-                       f'{int(height)}',
-                       ha='center', va='bottom', fontweight='bold', fontsize=9)
+            fig, ax = plt.subplots(figsize=(10, 6))
             
-            ax.set_ylabel('Total Transactions')
+            # Plot line chart
+            x_pos = range(len(type_transactions))
+            ax.plot(x_pos, type_transactions.values, marker='o', color=line_color, linewidth=3, 
+                   markersize=10, label=selected_type if selected_type in type_transactions.index else 'Type')
+            
+            # Find key points
+            min_val = type_transactions.min()
+            max_val = type_transactions.max()
+            range_val = max_val - min_val
+            
+            # Find selected value and adjacent points (left and right neighbors)
+            selected_trans = type_transactions.get(selected_type) if selected_type in type_transactions.index else None
+            selected_idx = None
+            right_idx = None
+            left_idx = None
+            right_trans = None
+            left_trans = None
+            
+            if selected_trans is not None:
+                selected_idx = list(type_transactions.index).index(selected_type)
+                
+                # Get right neighbor
+                if selected_idx + 1 < len(type_transactions):
+                    right_idx = selected_idx + 1
+                    right_trans = type_transactions.iloc[right_idx]
+                
+                # Get left neighbor
+                if selected_idx - 1 >= 0:
+                    left_idx = selected_idx - 1
+                    left_trans = type_transactions.iloc[left_idx]
+            
+            # Add range annotation at top
+            ax.text(0.02, 0.98, f'Range: {int(min_val)} - {int(max_val)}', 
+                   transform=ax.transAxes, fontsize=10, fontweight='bold',
+                   bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.8),
+                   verticalalignment='top')
+            
+            # Add annotations
+            label_offset_up = range_val * 0.3
+            label_offset_down = range_val * 0.25
+            
+            if selected_idx is not None:
+                # Selected point - RED
+                ax.annotate(f'Your: {int(selected_trans)}', xy=(selected_idx, selected_trans), 
+                           xytext=(selected_idx, max_val + label_offset_up),
+                           fontsize=11, fontweight='bold', color='#FF6B6B',
+                           ha='center', 
+                           arrowprops=dict(arrowstyle='->', color='#FF6B6B', lw=2.5))
+            
+            if right_idx is not None:
+                # Right neighbor - GREEN
+                ax.annotate(f'Next: {int(right_trans)}', xy=(right_idx, right_trans), 
+                           xytext=(right_idx, max_val + label_offset_up * 0.7),
+                           fontsize=10, fontweight='bold', color='#70AD47',
+                           ha='center', 
+                           arrowprops=dict(arrowstyle='->', color='#70AD47', lw=2))
+            
+            if left_idx is not None:
+                # Left neighbor - ORANGE
+                ax.annotate(f'Prev: {int(left_trans)}', xy=(left_idx, left_trans), 
+                           xytext=(left_idx, min_val - label_offset_down),
+                           fontsize=10, fontweight='bold', color='#FFA500',
+                           ha='center', 
+                           arrowprops=dict(arrowstyle='->', color='#FFA500', lw=2))
+            
+            ax.set_ylabel('Total Transactions', fontsize=11, fontweight='bold')
             ax.set_title(f'{price_category} Category - Activity by Type', fontsize=12, fontweight='bold')
-            ax.set_xticks(range(len(type_transactions)))
+            ax.set_xticks(x_pos)
             ax.set_xticklabels(type_transactions.index, rotation=45, ha='right')
-            ax.grid(axis='y', alpha=0.3)
+            ax.grid(axis='y', alpha=0.3, linestyle='--')
+            ax.set_ylim(min_val - label_offset_down * 1.5, max_val + label_offset_up * 1.5)
             st.pyplot(fig)
         
         with col4:
