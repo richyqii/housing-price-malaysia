@@ -862,27 +862,26 @@ with tab4:
             max_val = type_psf.max()
             range_val = max_val - min_val
             
-            # Find selected value, one higher, and one lower
+            # Find selected value and adjacent points (left and right neighbors)
             selected_value = type_psf.get(selected_type) if selected_type in type_psf.index else None
             selected_idx = None
-            higher_value = None
-            higher_idx = None
-            lower_value = None
-            lower_idx = None
+            right_idx = None  # neighbor to the right
+            left_idx = None   # neighbor to the left
+            right_value = None
+            left_value = None
             
             if selected_value is not None:
                 selected_idx = list(type_psf.index).index(selected_type)
-                # Find one value higher and one value lower than selected
-                higher_values = type_psf[type_psf > selected_value]
-                lower_values = type_psf[type_psf < selected_value]
                 
-                if len(higher_values) > 0:
-                    higher_value = higher_values.iloc[0]
-                    higher_idx = list(type_psf.index).index(higher_values.index[0])
+                # Get right neighbor (next in sorted list)
+                if selected_idx + 1 < len(type_psf):
+                    right_idx = selected_idx + 1
+                    right_value = type_psf.iloc[right_idx]
                 
-                if len(lower_values) > 0:
-                    lower_value = lower_values.iloc[0]
-                    lower_idx = list(type_psf.index).index(lower_values.index[0])
+                # Get left neighbor (previous in sorted list)
+                if selected_idx - 1 >= 0:
+                    left_idx = selected_idx - 1
+                    left_value = type_psf.iloc[left_idx]
             
             # Add range annotation at top
             ax.text(0.02, 0.98, f'Range: {min_val:.2f} - {max_val:.2f}', 
@@ -891,33 +890,33 @@ with tab4:
                    verticalalignment='top')
             
             # Add annotations far from the chart for selected, one higher, and one lower
-            label_offset_up = range_val * 0.15
+            label_offset_up = range_val * 0.2
             label_offset_down = range_val * 0.15
+            label_offset_side = len(type_psf) * 0.15
             
             if selected_idx is not None:
-                # Selected point - RED - label above the point
+                # Selected point - RED - at top
                 ax.annotate(f'Your: {selected_value:.2f}', xy=(selected_idx, selected_value), 
-                           xytext=(selected_idx, selected_value + label_offset_up),
+                           xytext=(selected_idx, max_val + label_offset_up),
                            fontsize=11, fontweight='bold', color='#FF6B6B',
                            ha='center', 
                            arrowprops=dict(arrowstyle='->', color='#FF6B6B', lw=2.5))
             
-            if higher_idx is not None:
-                # One higher - GREEN - label above the point
-                ax.annotate(f'↑ {higher_value:.2f}', xy=(higher_idx, higher_value), 
-                           xytext=(higher_idx, higher_value + label_offset_up),
+            if right_idx is not None:
+                # Right neighbor - GREEN - right side with arrow
+                ax.annotate(f'Next: {right_value:.2f}', xy=(right_idx, right_value), 
+                           xytext=(right_idx + label_offset_side, right_value),
                            fontsize=10, fontweight='bold', color='#70AD47',
-                           ha='center', 
+                           ha='left', 
                            arrowprops=dict(arrowstyle='->', color='#70AD47', lw=2))
             
-            if lower_idx is not None:
-                # One lower - ORANGE - label below the point
-                ax.annotate(f'↓ {lower_value:.2f}', xy=(lower_idx, lower_value), 
-                           xytext=(lower_idx, lower_value - label_offset_down),
+            if left_idx is not None:
+                # Left neighbor - ORANGE - left side with arrow
+                ax.annotate(f'Prev: {left_value:.2f}', xy=(left_idx, left_value), 
+                           xytext=(left_idx - label_offset_side, left_value),
                            fontsize=10, fontweight='bold', color='#FFA500',
-                           ha='center', 
-                           arrowprops=dict(arrowstyle='->', color='#FFA500', lw=2),
-                           verticalalignment='top')
+                           ha='right', 
+                           arrowprops=dict(arrowstyle='->', color='#FFA500', lw=2))
             
             ax.set_ylabel('Median PSF', fontsize=11, fontweight='bold')
             ax.set_title(f'{price_category} Category - PSF Trend by Type', fontsize=12, fontweight='bold')
