@@ -760,45 +760,12 @@ with tab4:
             st.success(f"✅ Found {len(filtered_data)} properties in {selected_township} - {price_category} Category")
             st.markdown('---')
             
-            # Get the aggregated values (first matching record)
+            # Get aggregated values for visualizations (not displayed, just for calculations)
             sample = filtered_data.iloc[0]
             median_price = sample['Median_Price']
             median_psf = sample['Median_PSF']
             transactions = sample['Transactions']
             
-            # Choose color based on category
-            if price_category == 'Low':
-                color_indicator = '🟢'
-                bg_color = '#90EE90'
-            elif price_category == 'Medium':
-                color_indicator = '🟡'
-                bg_color = '#FFD700'
-            else:
-                color_indicator = '🔴'
-                bg_color = '#FFB6C6'
-            
-            # Display price category prominently
-            st.subheader(f'{color_indicator} Price Category: {price_category}')
-            st.markdown(f'**Low Range:** RM 0 - RM {low:,.0f}')
-            st.markdown(f'**Medium Range:** RM {low:,.0f} - RM {high:,.0f}')
-            st.markdown(f'**High Range:** RM {high:,.0f}+')
-            
-            st.markdown('---')
-            
-            # Display metrics
-            st.subheader('Property Metrics')
-            col1, col2, col3 = st.columns(3)
-            
-            with col1:
-                st.metric('Median Price', f'RM {median_price:,.0f}', 
-                         delta=f'Category: {price_category}')
-            with col2:
-                st.metric('Median PSF', f'RM {median_psf:,.2f}')
-            with col3:
-                st.metric('Total Transactions', f'{int(transactions)}')
-            
-            st.markdown('---')
-        
             # Display visualizations
             st.subheader('📊 Market Visualizations')
         
