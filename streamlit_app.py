@@ -204,7 +204,7 @@ svm_model, svm_train_pred, svm_test_pred, svm_test_proba, svm_best_params, svm_b
 # =========================
 # Create tabs for each model
 # =========================
-tab1, tab2, tab3 = st.tabs(["🌳 Decision Tree", "🌲 Random Forest", "🤖 Support Vector Machine"])
+tab1, tab2, tab3, tab4 = st.tabs(["🌳 Decision Tree", "🌲 Random Forest", "🤖 Support Vector Machine", "🔍 Price Filter"])
 
 labels = ['Low', 'Medium', 'High']
 
@@ -683,3 +683,129 @@ with tab3:
     ax.set_title('Multiclass ROC Curve (Tuned SVM)')
     ax.legend(loc="lower right")
     st.pyplot(fig)
+
+# ============================================
+# PRICE FILTER & PREDICTION TAB
+# ============================================
+with tab4:
+    st.header('🔍 Filter & Predict Housing Price')
+    
+    st.markdown('**Select property characteristics to filter and analyze housing prices in Malaysia**')
+    st.markdown('---')
+    
+    # Get unique values for filters
+    townships = sorted(data['Township'].unique())
+    areas = sorted(data['Area'].unique())
+    states = sorted(data['State'].unique())
+    tenures = sorted(data['Tenure'].unique())
+    types = sorted(data['Type'].unique())
+    
+    # Create filter controls
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        selected_township = st.selectbox('Township', townships, key='township_filter')
+    with col2:
+        selected_area = st.selectbox('Area', areas, key='area_filter')
+    with col3:
+        selected_state = st.selectbox('State', states, key='state_filter')
+    
+    col4, col5 = st.columns(2)
+    
+    with col4:
+        selected_tenure = st.selectbox('Tenure', tenures, key='tenure_filter')
+    with col5:
+        selected_type = st.selectbox('Type', types, key='type_filter')
+    
+    st.markdown('---')
+    
+    # Filter data based on user selections
+    filtered_data = data[
+        (data['Township'] == selected_township) &
+        (data['Area'] == selected_area) &
+        (data['State'] == selected_state) &
+        (data['Tenure'] == selected_tenure) &
+        (data['Type'] == selected_type)
+    ]
+    
+    # Display results
+    if len(filtered_data) > 0:
+        st.success(f"✅ Found {len(filtered_data)} matching properties")
+        st.markdown('---')
+        
+        # Get the aggregated values
+        median_price = filtered_data['Median_Price'].iloc[0] if len(filtered_data) > 0 else 0
+        median_psf = filtered_data['Median_PSF'].iloc[0] if len(filtered_data) > 0 else 0
+        transactions = filtered_data['Transactions'].iloc[0] if len(filtered_data) > 0 else 0
+        
+        # Categorize price
+        price_category = 'Low' if median_price < low else ('Medium' if median_price < high else 'High')
+        
+        # Choose color based on category
+        if price_category == 'Low':
+            color_indicator = '🟢'
+            bg_color = '#90EE90'
+        elif price_category == 'Medium':
+            color_indicator = '🟡'
+            bg_color = '#FFD700'
+        else:
+            color_indicator = '🔴'
+            bg_color = '#FFB6C6'
+        
+        # Display price category prominently
+        st.subheader(f'{color_indicator} Price Category: {price_category}')
+        st.markdown(f'**Low Range:** RM 0 - RM {low:,.0f}')
+        st.markdown(f'**Medium Range:** RM {low:,.0f} - RM {high:,.0f}')
+        st.markdown(f'**High Range:** RM {high:,.0f}+')
+        
+        st.markdown('---')
+        
+        # Display metrics
+        st.subheader('Property Metrics')
+        col1, col2, col3 = st.columns(3)
+        
+        with col1:
+            st.metric('Median Price', f'RM {median_price:,.0f}', 
+                     delta=f'Category: {price_category}')
+        with col2:
+            st.metric('Median PSF', f'RM {median_psf:,.2f}')
+        with col3:
+            st.metric('Total Transactions', f'{int(transactions)}')
+        
+        st.markdown('---')
+        
+        # Display detailed filtered data
+        st.subheader('Detailed Information')
+        display_cols = ['Township', 'Area', 'State', 'Tenure', 'Type', 'Median_Price', 'Median_PSF', 'Transactions']
+        st.dataframe(filtered_data[display_cols], use_container_width=True)
+        
+        st.markdown('---')
+        
+        # Summary section
+        st.subheader('📊 Summary')
+        summary_text = f"""
+        **Property Location Summary:**
+        - **Township:** {selected_township}
+        - **Area:** {selected_area}
+        - **State:** {selected_state}
+        
+        **Property Details:**
+        - **Tenure:** {selected_tenure}
+        - **Type:** {selected_type}
+        
+        **Market Analysis:**
+        - **Median Price:** RM {median_price:,.0f}
+        - **Price Category:** {price_category}
+        - **Price per Square Foot:** RM {median_psf:,.2f}
+        - **Market Activity:** {int(transactions)} transactions
+        
+        **Interpretation:**
+        This property falls in the **{price_category}** price range for {selected_state}.
+        With a median price of RM {median_price:,.0f}, it represents a
+        **{price_category.lower()} value** option in this market segment.
+        """
+        st.info(summary_text)
+        
+    else:
+        st.warning('❌ No matching properties found for the selected criteria. Please try different selections.')
+
