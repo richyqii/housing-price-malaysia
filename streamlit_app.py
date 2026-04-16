@@ -891,33 +891,33 @@ with tab4:
                    verticalalignment='top')
             
             # Add annotations far from the chart for selected, one higher, and one lower
-            label_offset_up = range_val * 0.2
+            label_offset_up = range_val * 0.15
             label_offset_down = range_val * 0.15
-            label_offset_side = len(type_psf) * 0.15
             
             if selected_idx is not None:
-                # Selected point - RED - at top
+                # Selected point - RED - label above the point
                 ax.annotate(f'Your: {selected_value:.2f}', xy=(selected_idx, selected_value), 
-                           xytext=(selected_idx, max_val + label_offset_up),
+                           xytext=(selected_idx, selected_value + label_offset_up),
                            fontsize=11, fontweight='bold', color='#FF6B6B',
                            ha='center', 
                            arrowprops=dict(arrowstyle='->', color='#FF6B6B', lw=2.5))
             
             if higher_idx is not None:
-                # One higher - GREEN - right side of selected
-                ax.annotate(f'Higher 1: {higher_value:.2f}', xy=(higher_idx, higher_value), 
-                           xytext=(higher_idx + label_offset_side, higher_value),
+                # One higher - GREEN - label above the point
+                ax.annotate(f'↑ {higher_value:.2f}', xy=(higher_idx, higher_value), 
+                           xytext=(higher_idx, higher_value + label_offset_up),
                            fontsize=10, fontweight='bold', color='#70AD47',
-                           ha='left', 
+                           ha='center', 
                            arrowprops=dict(arrowstyle='->', color='#70AD47', lw=2))
             
             if lower_idx is not None:
-                # One lower - ORANGE - left side of selected
-                ax.annotate(f'Lower 1: {lower_value:.2f}', xy=(lower_idx, lower_value), 
-                           xytext=(lower_idx - label_offset_side, lower_value),
+                # One lower - ORANGE - label below the point
+                ax.annotate(f'↓ {lower_value:.2f}', xy=(lower_idx, lower_value), 
+                           xytext=(lower_idx, lower_value - label_offset_down),
                            fontsize=10, fontweight='bold', color='#FFA500',
-                           ha='right', 
-                           arrowprops=dict(arrowstyle='->', color='#FFA500', lw=2))
+                           ha='center', 
+                           arrowprops=dict(arrowstyle='->', color='#FFA500', lw=2),
+                           verticalalignment='top')
             
             ax.set_ylabel('Median PSF', fontsize=11, fontweight='bold')
             ax.set_title(f'{price_category} Category - PSF Trend by Type', fontsize=12, fontweight='bold')
