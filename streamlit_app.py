@@ -893,6 +893,7 @@ with tab4:
             # Add annotations far from the chart for selected, one higher, and one lower
             label_offset_up = range_val * 0.2
             label_offset_down = range_val * 0.15
+            label_offset_side = len(type_psf) * 0.15
             
             if selected_idx is not None:
                 # Selected point - RED - at top
@@ -903,21 +904,20 @@ with tab4:
                            arrowprops=dict(arrowstyle='->', color='#FF6B6B', lw=2.5))
             
             if higher_idx is not None:
-                # One higher - GREEN - upper right area
+                # One higher - GREEN - right side of selected
                 ax.annotate(f'Higher 1: {higher_value:.2f}', xy=(higher_idx, higher_value), 
-                           xytext=(higher_idx + 0.3, max_val + label_offset_up * 0.6),
+                           xytext=(higher_idx + label_offset_side, higher_value),
                            fontsize=10, fontweight='bold', color='#70AD47',
-                           ha='center', 
+                           ha='left', 
                            arrowprops=dict(arrowstyle='->', color='#70AD47', lw=2))
             
             if lower_idx is not None:
-                # One lower - ORANGE - lower area
+                # One lower - ORANGE - left side of selected
                 ax.annotate(f'Lower 1: {lower_value:.2f}', xy=(lower_idx, lower_value), 
-                           xytext=(lower_idx - 0.3, min_val - label_offset_down),
+                           xytext=(lower_idx - label_offset_side, lower_value),
                            fontsize=10, fontweight='bold', color='#FFA500',
-                           ha='center', 
-                           arrowprops=dict(arrowstyle='->', color='#FFA500', lw=2),
-                           verticalalignment='top')
+                           ha='right', 
+                           arrowprops=dict(arrowstyle='->', color='#FFA500', lw=2))
             
             ax.set_ylabel('Median PSF', fontsize=11, fontweight='bold')
             ax.set_title(f'{price_category} Category - PSF Trend by Type', fontsize=12, fontweight='bold')
