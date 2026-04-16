@@ -860,19 +860,29 @@ with tab4:
             # Find key points
             min_val = type_psf.min()
             max_val = type_psf.max()
+            range_val = max_val - min_val
             
             # Find selected value and next higher/lower
             selected_value = type_psf.get(selected_type) if selected_type in type_psf.index else None
+            selected_idx = None
             next_higher = None
+            next_higher_idx = None
             next_lower = None
+            next_lower_idx = None
             
             if selected_value is not None:
+                selected_idx = list(type_psf.index).index(selected_type)
                 # Find values higher and lower than selected
                 higher_values = type_psf[type_psf > selected_value]
                 lower_values = type_psf[type_psf < selected_value]
                 
                 next_higher = higher_values.iloc[0] if len(higher_values) > 0 else None
                 next_lower = lower_values.iloc[0] if len(lower_values) > 0 else None
+                
+                if next_higher is not None:
+                    next_higher_idx = list(type_psf.index).index(higher_values.index[0])
+                if next_lower is not None:
+                    next_lower_idx = list(type_psf.index).index(lower_values.index[0])
             
             # Add range annotation at top
             ax.text(0.02, 0.98, f'Range: {min_val:.2f} - {max_val:.2f}', 
@@ -880,34 +890,41 @@ with tab4:
                    bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.8),
                    verticalalignment='top')
             
-            # Mark and label all key points
-            for i, (ptype, value) in enumerate(zip(type_psf.index, type_psf.values)):
-                if ptype == selected_type:
-                    # Selected point - RED
-                    ax.scatter([i], [value], color='#FF6B6B', s=250, zorder=5, edgecolors='black', linewidth=2)
-                    ax.annotate(f'↑ {value:.2f}', xy=(i, value), xytext=(i, value+10),
-                               fontsize=11, fontweight='bold', color='#FF6B6B',
-                               ha='center', arrowprops=dict(arrowstyle='->', color='#FF6B6B', lw=2))
-                elif next_higher is not None and abs(value - next_higher) < 0.01:
-                    # Next highest - GREEN
-                    ax.scatter([i], [value], color='#70AD47', s=150, zorder=4, edgecolors='black', linewidth=1.5)
-                    ax.annotate(f'↑ {value:.2f}', xy=(i, value), xytext=(i, value+8),
-                               fontsize=9, fontweight='bold', color='#70AD47',
-                               ha='center', arrowprops=dict(arrowstyle='->', color='#70AD47', lw=1.5))
-                elif next_lower is not None and abs(value - next_lower) < 0.01:
-                    # Next lowest - ORANGE
-                    ax.scatter([i], [value], color='#FFA500', s=150, zorder=4, edgecolors='black', linewidth=1.5)
-                    ax.annotate(f'↓ {value:.2f}', xy=(i, value), xytext=(i, value-8),
-                               fontsize=9, fontweight='bold', color='#FFA500',
-                               ha='center', arrowprops=dict(arrowstyle='->', color='#FFA500', lw=1.5),
-                               verticalalignment='top')
+            # Add annotations far from the chart for selected and comparison points
+            label_offset_up = range_val * 0.2
+            label_offset_down = range_val * 0.15
+            
+            if selected_idx is not None:
+                # Selected point - RED - at top
+                ax.annotate(f'Your: {selected_value:.2f}', xy=(selected_idx, selected_value), 
+                           xytext=(selected_idx, max_val + label_offset_up),
+                           fontsize=11, fontweight='bold', color='#FF6B6B',
+                           ha='center', 
+                           arrowprops=dict(arrowstyle='->', color='#FF6B6B', lw=2.5))
+            
+            if next_higher_idx is not None:
+                # Next higher - GREEN - upper right area
+                ax.annotate(f'Higher: {next_higher:.2f}', xy=(next_higher_idx, next_higher), 
+                           xytext=(next_higher_idx + 0.3, max_val + label_offset_up * 0.6),
+                           fontsize=10, fontweight='bold', color='#70AD47',
+                           ha='center', 
+                           arrowprops=dict(arrowstyle='->', color='#70AD47', lw=2))
+            
+            if next_lower_idx is not None:
+                # Next lower - ORANGE - lower area
+                ax.annotate(f'Lower: {next_lower:.2f}', xy=(next_lower_idx, next_lower), 
+                           xytext=(next_lower_idx - 0.3, min_val - label_offset_down),
+                           fontsize=10, fontweight='bold', color='#FFA500',
+                           ha='center', 
+                           arrowprops=dict(arrowstyle='->', color='#FFA500', lw=2),
+                           verticalalignment='top')
             
             ax.set_ylabel('Median PSF', fontsize=11, fontweight='bold')
             ax.set_title(f'{price_category} Category - PSF Trend by Type', fontsize=12, fontweight='bold')
             ax.set_xticks(x_pos)
             ax.set_xticklabels(type_psf.index, rotation=45, ha='right')
             ax.grid(axis='y', alpha=0.3, linestyle='--')
-            ax.set_ylim(min_val - (max_val - min_val) * 0.15, max_val + (max_val - min_val) * 0.25)
+            ax.set_ylim(min_val - label_offset_down * 1.2, max_val + label_offset_up * 1.2)
             st.pyplot(fig)
         
         st.markdown('---')
