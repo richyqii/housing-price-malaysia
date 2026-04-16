@@ -797,6 +797,90 @@ with tab4:
         
         st.markdown('---')
         
+        # Display visualizations
+        st.subheader('📊 Market Visualizations')
+        
+        # Visualization 1: Price Comparison - Selected vs Market
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.markdown('**Price Category Distribution**')
+            # Get price category breakdown across all market
+            category_counts = data['Price_Category'].value_counts().sort_index()
+            category_labels = ['Low', 'Medium', 'High']
+            colors_chart = ['#90EE90', '#FFD700', '#FFB6C6']
+            
+            fig, ax = plt.subplots(figsize=(6, 4))
+            ax.bar(category_labels, [category_counts.get(i, 0) for i in [0, 1, 2]], color=colors_chart)
+            ax.set_title('Market Price Distribution')
+            ax.set_ylabel('Number of Properties')
+            ax.set_xlabel('Price Category')
+            st.pyplot(fig)
+        
+        with col2:
+            st.markdown('**Selected Property Position**')
+            # Highlight where selected property sits
+            comparison_data = pd.DataFrame({
+                'Selected': [1] if price_category == 'Low' else [0],
+                'Category': ['Low']
+            }) if price_category == 'Low' else (pd.DataFrame({
+                'Selected': [1] if price_category == 'Medium' else [0],
+                'Category': ['Medium']
+            }) if price_category == 'Medium' else pd.DataFrame({
+                'Selected': [1],
+                'Category': ['High']
+            }))
+            
+            fig, ax = plt.subplots(figsize=(6, 4))
+            categories = ['Low', 'Medium', 'High']
+            position = [1 if c == price_category else 0 for c in categories]
+            colors_pos = ['#90EE90' if c == price_category else '#E0E0E0' for c in categories]
+            
+            ax.bar(categories, [1, 1, 1], color=colors_pos, alpha=0.7, edgecolor='black', linewidth=2)
+            ax.set_title('Your Selected Property')
+            ax.set_ylabel('Category Level')
+            ax.set_ylim(0, 1.3)
+            ax.axhline(y=1, color='red', linestyle='--', linewidth=2, label='Your Property')
+            ax.legend()
+            st.pyplot(fig)
+        
+        st.markdown('---')
+        
+        # Visualization 2: Price per Square Foot - State Comparison
+        col3, col4 = st.columns(2)
+        
+        with col3:
+            st.markdown('**Median Price by State**')
+            state_prices = data.groupby('State')['Median_Price'].median().sort_values(ascending=False).head(10)
+            
+            fig, ax = plt.subplots(figsize=(8, 5))
+            bars = ax.barh(state_prices.index, state_prices.values, color='steelblue')
+            # Highlight selected state
+            for i, state in enumerate(state_prices.index):
+                if state == selected_state:
+                    bars[i].set_color('orange')
+            ax.set_xlabel('Median Price (RM)')
+            ax.set_title('Top 10 States by Median Price')
+            ax.invert_yaxis()
+            st.pyplot(fig)
+        
+        with col4:
+            st.markdown('**Median PSF by Type**')
+            type_psf = data.groupby('Type')['Median_PSF'].median().sort_values(ascending=False)
+            
+            fig, ax = plt.subplots(figsize=(8, 5))
+            bars = ax.barh(type_psf.index, type_psf.values, color='seagreen')
+            # Highlight selected type
+            for i, ptype in enumerate(type_psf.index):
+                if ptype == selected_type:
+                    bars[i].set_color('orange')
+            ax.set_xlabel('Median PSF (RM)')
+            ax.set_title('Median Price per Square Foot by Type')
+            ax.invert_yaxis()
+            st.pyplot(fig)
+        
+        st.markdown('---')
+        
         # Display detailed filtered data
         st.subheader('Detailed Information')
         display_cols = ['Township', 'Area', 'State', 'Tenure', 'Type', 'Median_Price', 'Median_PSF', 'Transactions']
