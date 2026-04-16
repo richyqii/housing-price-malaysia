@@ -862,27 +862,16 @@ with tab4:
             max_val = type_psf.max()
             range_val = max_val - min_val
             
-            # Find selected value and next higher/lower
+            # Find selected value, highest, and lowest
             selected_value = type_psf.get(selected_type) if selected_type in type_psf.index else None
             selected_idx = None
-            next_higher = None
-            next_higher_idx = None
-            next_lower = None
-            next_lower_idx = None
+            highest_val = max_val
+            highest_idx = list(type_psf.index).index(type_psf.idxmax())
+            lowest_val = min_val
+            lowest_idx = list(type_psf.index).index(type_psf.idxmin())
             
             if selected_value is not None:
                 selected_idx = list(type_psf.index).index(selected_type)
-                # Find values higher and lower than selected
-                higher_values = type_psf[type_psf > selected_value]
-                lower_values = type_psf[type_psf < selected_value]
-                
-                next_higher = higher_values.iloc[0] if len(higher_values) > 0 else None
-                next_lower = lower_values.iloc[0] if len(lower_values) > 0 else None
-                
-                if next_higher is not None:
-                    next_higher_idx = list(type_psf.index).index(higher_values.index[0])
-                if next_lower is not None:
-                    next_lower_idx = list(type_psf.index).index(lower_values.index[0])
             
             # Add range annotation at top
             ax.text(0.02, 0.98, f'Range: {min_val:.2f} - {max_val:.2f}', 
@@ -890,7 +879,7 @@ with tab4:
                    bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.8),
                    verticalalignment='top')
             
-            # Add annotations far from the chart for selected and comparison points
+            # Add annotations far from the chart for selected, highest, and lowest points
             label_offset_up = range_val * 0.2
             label_offset_down = range_val * 0.15
             
@@ -902,22 +891,20 @@ with tab4:
                            ha='center', 
                            arrowprops=dict(arrowstyle='->', color='#FF6B6B', lw=2.5))
             
-            if next_higher_idx is not None:
-                # Next higher - GREEN - upper right area
-                ax.annotate(f'Higher: {next_higher:.2f}', xy=(next_higher_idx, next_higher), 
-                           xytext=(next_higher_idx + 0.3, max_val + label_offset_up * 0.6),
-                           fontsize=10, fontweight='bold', color='#70AD47',
-                           ha='center', 
-                           arrowprops=dict(arrowstyle='->', color='#70AD47', lw=2))
+            # Highest value - GREEN - upper area
+            ax.annotate(f'Highest: {highest_val:.2f}', xy=(highest_idx, highest_val), 
+                       xytext=(highest_idx + 0.3, max_val + label_offset_up * 0.6),
+                       fontsize=10, fontweight='bold', color='#70AD47',
+                       ha='center', 
+                       arrowprops=dict(arrowstyle='->', color='#70AD47', lw=2))
             
-            if next_lower_idx is not None:
-                # Next lower - ORANGE - lower area
-                ax.annotate(f'Lower: {next_lower:.2f}', xy=(next_lower_idx, next_lower), 
-                           xytext=(next_lower_idx - 0.3, min_val - label_offset_down),
-                           fontsize=10, fontweight='bold', color='#FFA500',
-                           ha='center', 
-                           arrowprops=dict(arrowstyle='->', color='#FFA500', lw=2),
-                           verticalalignment='top')
+            # Lowest value - ORANGE - lower area
+            ax.annotate(f'Lowest: {lowest_val:.2f}', xy=(lowest_idx, lowest_val), 
+                       xytext=(lowest_idx - 0.3, min_val - label_offset_down),
+                       fontsize=10, fontweight='bold', color='#FFA500',
+                       ha='center', 
+                       arrowprops=dict(arrowstyle='->', color='#FFA500', lw=2),
+                       verticalalignment='top')
             
             ax.set_ylabel('Median PSF', fontsize=11, fontweight='bold')
             ax.set_title(f'{price_category} Category - PSF Trend by Type', fontsize=12, fontweight='bold')
