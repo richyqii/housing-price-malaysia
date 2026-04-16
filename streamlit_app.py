@@ -700,9 +700,10 @@ with tab4:
     # Filter data by township
     township_data = data[data['Township'] == selected_township]
     
-    # Step 2: Get available Areas for this Township
+    # Step 2: Get available Areas for this Township (Auto-fill)
     available_areas = sorted(township_data['Area'].unique())
-    selected_area = st.selectbox('Area', available_areas, key='area_filter')
+    selected_area = available_areas[0] if len(available_areas) > 0 else None
+    st.info(f'Area: **{selected_area}** (Auto-filled)')
     
     # Filter data by township and area
     township_area_data = township_data[township_data['Area'] == selected_area]
