@@ -846,28 +846,94 @@ with tab4:
                 if ptype == selected_type:
                     colors_type.append('#FF6B6B')  # Bright red for selected
                 else:
-                    colors_type.append('#B8B8B8')  # Gray for others
+                    colors_type.append('#4472C4')  # Blue for others
             
             fig, ax = plt.subplots(figsize=(8, 5))
-            bars = ax.barh(type_psf.index, type_psf.values, color=colors_type, 
-                           edgecolor='black', linewidth=2)
+            bars = ax.bar(range(len(type_psf)), type_psf.values, color=colors_type, 
+                          edgecolor='black', linewidth=2)
             
             # Add value labels
             for i, bar in enumerate(bars):
-                width = bar.get_width()
-                ax.text(width, bar.get_y() + bar.get_height()/2.,
-                       f' RM {width:.2f}',
-                       ha='left', va='center', fontweight='bold')
+                height = bar.get_height()
+                ax.text(bar.get_x() + bar.get_width()/2., height,
+                       f'RM {height:.2f}',
+                       ha='center', va='bottom', fontweight='bold', fontsize=9)
             
-            ax.set_xlabel('Median PSF (RM)')
+            ax.set_ylabel('Median PSF (RM)')
             ax.set_title(f'Your Property Type: "{selected_type}"', fontsize=12, fontweight='bold')
-            ax.invert_yaxis()
-            ax.grid(axis='x', alpha=0.3)
+            ax.set_xticks(range(len(type_psf)))
+            ax.set_xticklabels(type_psf.index, rotation=45, ha='right')
+            ax.grid(axis='y', alpha=0.3)
             st.pyplot(fig)
         
         st.markdown('---')
         
-        # Visualization 2: Median Price by State - Highlight Selected
+        # Visualization 2: Transactions by Type - Highlight Selected
+        col3, col4 = st.columns(2)
+        
+        with col3:
+            st.markdown('**Transactions by Type (Your Selection Highlighted)**')
+            type_transactions = data.groupby('Type')['Transactions'].sum().sort_values(ascending=False)
+            
+            # Highlight selected type
+            colors_trans = []
+            for ptype in type_transactions.index:
+                if ptype == selected_type:
+                    colors_trans.append('#FF6B6B')  # Bright red for selected
+                else:
+                    colors_trans.append('#70AD47')  # Green for others
+            
+            fig, ax = plt.subplots(figsize=(8, 5))
+            bars = ax.bar(range(len(type_transactions)), type_transactions.values, color=colors_trans,
+                          edgecolor='black', linewidth=2)
+            
+            # Add value labels
+            for i, bar in enumerate(bars):
+                height = bar.get_height()
+                ax.text(bar.get_x() + bar.get_width()/2., height,
+                       f'{int(height)}',
+                       ha='center', va='bottom', fontweight='bold', fontsize=9)
+            
+            ax.set_ylabel('Total Transactions')
+            ax.set_title(f'Market Activity - Your Type: "{selected_type}"', fontsize=12, fontweight='bold')
+            ax.set_xticks(range(len(type_transactions)))
+            ax.set_xticklabels(type_transactions.index, rotation=45, ha='right')
+            ax.grid(axis='y', alpha=0.3)
+            st.pyplot(fig)
+        
+        with col4:
+            st.markdown('**Transactions by State (Your Selection Highlighted)**')
+            state_transactions = data.groupby('State')['Transactions'].sum().sort_values(ascending=False)
+            
+            # Highlight selected state
+            colors_state_trans = []
+            for state in state_transactions.index:
+                if state == selected_state:
+                    colors_state_trans.append('#FF6B6B')  # Bright red for selected
+                else:
+                    colors_state_trans.append('#70AD47')  # Green for others
+            
+            fig, ax = plt.subplots(figsize=(8, 5))
+            bars = ax.bar(range(len(state_transactions)), state_transactions.values, color=colors_state_trans,
+                          edgecolor='black', linewidth=2)
+            
+            # Add value labels
+            for i, bar in enumerate(bars):
+                height = bar.get_height()
+                ax.text(bar.get_x() + bar.get_width()/2., height,
+                       f'{int(height)}',
+                       ha='center', va='bottom', fontweight='bold', fontsize=8)
+            
+            ax.set_ylabel('Total Transactions')
+            ax.set_title(f'Market Activity - Your State: "{selected_state}"', fontsize=12, fontweight='bold')
+            ax.set_xticks(range(len(state_transactions)))
+            ax.set_xticklabels(state_transactions.index, rotation=45, ha='right', fontsize=9)
+            ax.grid(axis='y', alpha=0.3)
+            st.pyplot(fig)
+        
+        st.markdown('---')
+        
+        # Visualization 3: Median Price by State - Highlight Selected
         st.markdown('**Median Price by State (Your Selection Highlighted)**')
         state_prices = data.groupby('State')['Median_Price'].median().sort_values(ascending=False)
         
