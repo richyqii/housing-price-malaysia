@@ -690,90 +690,77 @@ with tab3:
 with tab4:
     st.header('🔍 Filter & Predict Housing Price')
     
-    st.markdown('**Select Township and Median Price - System will auto-fill other properties**')
+    st.markdown('**Select Township and Price Category - System will auto-fill all other properties**')
     st.markdown('---')
     
-    # Step 1: User selects Township and Price Category
-    col1, col2 = st.columns(2)
+    # Step 1: User selects Township
+    townships = sorted(data['Township'].unique())
+    selected_township = st.selectbox('Township', townships, key='township_filter')
     
-    with col1:
-        townships = sorted(data['Township'].unique())
-        selected_township = st.selectbox('Township', townships, key='township_filter')
+    # Step 2: User selects Price Category (Median Price)
+    col_price, col_cat = st.columns(2)
     
-    with col2:
-        price_categories = ['Low', 'Medium', 'High']
-        selected_price_cat = st.selectbox('Median Price Category', price_categories, key='price_cat_filter')
+    with col_price:
+        st.markdown('**Median Price:**')
+        st.markdown(f'Low: RM 0 - RM {low:,.0f}')
+        st.markdown(f'Medium: RM {low:,.0f} - RM {high:,.0f}')
+        st.markdown(f'High: RM {high:,.0f}+')
     
-    # Convert price category to number
-    price_cat_num = 0 if selected_price_cat == 'Low' else (1 if selected_price_cat == 'Medium' else 2)
+    with col_cat:
+        price_category = st.radio('Select Category', ['Low', 'Medium', 'High'], key='price_category_filter')
+        category_num = 0 if price_category == 'Low' else (1 if price_category == 'Medium' else 2)
     
-    # Filter data by township AND price category
-    township_price_data = data[(data['Township'] == selected_township) & (data['Price_Category'] == price_cat_num)]
+    # Filter data by township and price category
+    filtered_by_township_price = data[
+        (data['Township'] == selected_township) &
+        (data['Price_Category'] == category_num)
+    ]
     
-    # Step 2: Get available Areas (Auto-fill)
-    available_areas = sorted(township_price_data['Area'].unique())
-    selected_area = available_areas[0] if len(available_areas) > 0 else None
-    st.info(f'Area: **{selected_area}** (Auto-filled)')
-    
-    # Filter data by township, price category, and area
-    township_price_area_data = township_price_data[township_price_data['Area'] == selected_area]
-    
-    # Step 3: Get available States (Auto-fill if only one)
-    available_states = sorted(township_price_area_data['State'].unique())
-    
-    if len(available_states) == 1:
-        selected_state = available_states[0]
+    if len(filtered_by_township_price) > 0:
+        # Auto-fill Area (get first available)
+        available_areas = sorted(filtered_by_township_price['Area'].unique())
+        selected_area = available_areas[0] if len(available_areas) > 0 else None
+        st.info(f'Area: **{selected_area}** (Auto-filled)')
+        
+        # Auto-fill State (get first available)
+        available_states = sorted(filtered_by_township_price['State'].unique())
+        selected_state = available_states[0] if len(available_states) > 0 else None
         st.info(f'State: **{selected_state}** (Auto-filled)')
+        
+        # Auto-fill Tenure (get first available)
+        available_tenures = sorted(filtered_by_township_price['Tenure'].unique())
+        selected_tenure = available_tenures[0] if len(available_tenures) > 0 else None
+        st.info(f'Tenure: **{selected_tenure}** (Auto-filled)')
+        
+        # Auto-fill Type (get first available)
+        available_types = sorted(filtered_by_township_price['Type'].unique())
+        selected_type = available_types[0] if len(available_types) > 0 else None
+        st.info(f'Type: **{selected_type}** (Auto-filled)')
     else:
-        selected_state = st.selectbox('State', available_states, key='state_filter')
-    
-    # Filter data by township, price category, area, and state
-    township_price_area_state_data = township_price_area_data[township_price_area_data['State'] == selected_state]
-    
-    # Step 4: Get available Tenures and Types (Auto-fill if only one)
-    available_tenures = sorted(township_price_area_state_data['Tenure'].unique())
-    available_types = sorted(township_price_area_state_data['Type'].unique())
-    
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        if len(available_tenures) == 1:
-            selected_tenure = available_tenures[0]
-            st.info(f'Tenure: **{selected_tenure}** (Auto-filled)')
-        else:
-            selected_tenure = st.selectbox('Tenure', available_tenures, key='tenure_filter')
-    
-    with col2:
-        if len(available_types) == 1:
-            selected_type = available_types[0]
-            st.info(f'Type: **{selected_type}** (Auto-filled)')
-        else:
-            selected_type = st.selectbox('Type', available_types, key='type_filter')
+        st.error(f'❌ No properties found for {selected_township} in {price_category} category')
+        selected_area = None
+        selected_state = None
+        selected_tenure = None
+        selected_type = None
     
     st.markdown('---')
     
-    # Filter data based on all selections
+    # Filter data based on selected township and price category
     filtered_data = data[
         (data['Township'] == selected_township) &
-        (data['Area'] == selected_area) &
-        (data['State'] == selected_state) &
-        (data['Tenure'] == selected_tenure) &
-        (data['Type'] == selected_type) &
-        (data['Price_Category'] == price_cat_num)
+        (data['Price_Category'] == category_num)
     ]
     
     # Display results
     if len(filtered_data) > 0:
-        st.success(f"✅ Found {len(filtered_data)} matching properties")
+        st.success(f"✅ Found {len(filtered_data)} properties in {selected_township} - {price_category} Category")
         st.markdown('---')
         
-        # Get the aggregated values
-        median_price = filtered_data['Median_Price'].iloc[0] if len(filtered_data) > 0 else 0
-        median_psf = filtered_data['Median_PSF'].iloc[0] if len(filtered_data) > 0 else 0
-        transactions = filtered_data['Transactions'].iloc[0] if len(filtered_data) > 0 else 0
-        
-        # Use selected price category
-        price_category = selected_price_cat
+        # Get the aggregated values (first matching record)
+        sample = filtered_data.iloc[0]
+        median_price = sample['Median_Price']
+        median_psf = sample['Median_PSF']
+        transactions = sample['Transactions']
         
         # Choose color based on category
         if price_category == 'Low':
