@@ -837,8 +837,12 @@ with tab4:
             st.pyplot(fig)
         
         with col2:
-            st.markdown('**Median PSF by Type (Your Selection Highlighted)**')
-            type_psf = data.groupby('Type')['Median_PSF'].median().sort_values(ascending=False)
+            st.markdown('**Median PSF by Type (Same Category - Highlighted)**')
+            
+            # Filter to same price category
+            category_num = 0 if price_category == 'Low' else (1 if price_category == 'Medium' else 2)
+            same_category_data = data[data['Price_Category'] == category_num]
+            type_psf = same_category_data.groupby('Type')['Median_PSF'].median().sort_values(ascending=False)
             
             # Highlight selected type
             colors_type = []
@@ -860,7 +864,7 @@ with tab4:
                        ha='center', va='bottom', fontweight='bold', fontsize=9)
             
             ax.set_ylabel('Median PSF (RM)')
-            ax.set_title(f'Your Property Type: "{selected_type}"', fontsize=12, fontweight='bold')
+            ax.set_title(f'{price_category} Category - PSF by Type', fontsize=12, fontweight='bold')
             ax.set_xticks(range(len(type_psf)))
             ax.set_xticklabels(type_psf.index, rotation=45, ha='right')
             ax.grid(axis='y', alpha=0.3)
@@ -872,8 +876,12 @@ with tab4:
         col3, col4 = st.columns(2)
         
         with col3:
-            st.markdown('**Transactions by Type (Your Selection Highlighted)**')
-            type_transactions = data.groupby('Type')['Transactions'].sum().sort_values(ascending=False)
+            st.markdown('**Transactions by Type (Same Category - Highlighted)**')
+            
+            # Filter to same price category
+            category_num = 0 if price_category == 'Low' else (1 if price_category == 'Medium' else 2)
+            same_category_data = data[data['Price_Category'] == category_num]
+            type_transactions = same_category_data.groupby('Type')['Transactions'].sum().sort_values(ascending=False)
             
             # Highlight selected type
             colors_trans = []
@@ -895,15 +903,19 @@ with tab4:
                        ha='center', va='bottom', fontweight='bold', fontsize=9)
             
             ax.set_ylabel('Total Transactions')
-            ax.set_title(f'Market Activity - Your Type: "{selected_type}"', fontsize=12, fontweight='bold')
+            ax.set_title(f'{price_category} Category - Activity by Type', fontsize=12, fontweight='bold')
             ax.set_xticks(range(len(type_transactions)))
             ax.set_xticklabels(type_transactions.index, rotation=45, ha='right')
             ax.grid(axis='y', alpha=0.3)
             st.pyplot(fig)
         
         with col4:
-            st.markdown('**Transactions by State (Your Selection Highlighted)**')
-            state_transactions = data.groupby('State')['Transactions'].sum().sort_values(ascending=False)
+            st.markdown('**Transactions by State (Same Category - Highlighted)**')
+            
+            # Filter to same price category
+            category_num = 0 if price_category == 'Low' else (1 if price_category == 'Medium' else 2)
+            same_category_data = data[data['Price_Category'] == category_num]
+            state_transactions = same_category_data.groupby('State')['Transactions'].sum().sort_values(ascending=False)
             
             # Highlight selected state
             colors_state_trans = []
@@ -925,7 +937,7 @@ with tab4:
                        ha='center', va='bottom', fontweight='bold', fontsize=8)
             
             ax.set_ylabel('Total Transactions')
-            ax.set_title(f'Market Activity - Your State: "{selected_state}"', fontsize=12, fontweight='bold')
+            ax.set_title(f'{price_category} Category - Activity by State', fontsize=12, fontweight='bold')
             ax.set_xticks(range(len(state_transactions)))
             ax.set_xticklabels(state_transactions.index, rotation=45, ha='right', fontsize=9)
             ax.grid(axis='y', alpha=0.3)
@@ -933,9 +945,13 @@ with tab4:
         
         st.markdown('---')
         
-        # Visualization 3: Median Price by State - Highlight Selected
-        st.markdown('**Median Price by State (Your Selection Highlighted)**')
-        state_prices = data.groupby('State')['Median_Price'].median().sort_values(ascending=False)
+        # Visualization 3: Median Price by State - Highlight Selected (Same Category)
+        st.markdown('**Median Price by State (Same Category - Highlighted)**')
+        
+        # Filter to same price category
+        category_num = 0 if price_category == 'Low' else (1 if price_category == 'Medium' else 2)
+        same_category_data = data[data['Price_Category'] == category_num]
+        state_prices = same_category_data.groupby('State')['Median_Price'].median().sort_values(ascending=False)
         
         # Highlight selected state
         colors_state = []
@@ -957,7 +973,7 @@ with tab4:
                    ha='left', va='center', fontsize=9, fontweight='bold')
         
         ax.set_xlabel('Median Price (RM)', fontsize=11, fontweight='bold')
-        ax.set_title(f'Your State: "{selected_state}" (Highlighted in Red)', fontsize=12, fontweight='bold')
+        ax.set_title(f'{price_category} Category - Price by State', fontsize=12, fontweight='bold')
         ax.invert_yaxis()
         ax.grid(axis='x', alpha=0.3)
         st.pyplot(fig)
