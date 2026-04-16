@@ -690,36 +690,58 @@ with tab3:
 with tab4:
     st.header('🔍 Filter & Predict Housing Price')
     
-    st.markdown('**Select property characteristics to filter and analyze housing prices in Malaysia**')
+    st.markdown('**Select township and system will auto-fill other properties based on available data**')
     st.markdown('---')
     
-    # Get unique values for filters
+    # Step 1: User selects Township
     townships = sorted(data['Township'].unique())
-    areas = sorted(data['Area'].unique())
-    states = sorted(data['State'].unique())
-    tenures = sorted(data['Tenure'].unique())
-    types = sorted(data['Type'].unique())
+    selected_township = st.selectbox('Township', townships, key='township_filter')
     
-    # Create filter controls
-    col1, col2, col3 = st.columns(3)
+    # Filter data by township
+    township_data = data[data['Township'] == selected_township]
+    
+    # Step 2: Get available Areas for this Township
+    available_areas = sorted(township_data['Area'].unique())
+    selected_area = st.selectbox('Area', available_areas, key='area_filter')
+    
+    # Filter data by township and area
+    township_area_data = township_data[township_data['Area'] == selected_area]
+    
+    # Step 3: Get available States for this Township+Area
+    available_states = sorted(township_area_data['State'].unique())
+    
+    if len(available_states) == 1:
+        selected_state = available_states[0]
+        st.info(f'State: **{selected_state}** (Auto-filled)')
+    else:
+        selected_state = st.selectbox('State', available_states, key='state_filter')
+    
+    # Filter data by township, area, and state
+    township_area_state_data = township_area_data[township_area_data['State'] == selected_state]
+    
+    # Step 4: Get available Tenures and Types
+    available_tenures = sorted(township_area_state_data['Tenure'].unique())
+    available_types = sorted(township_area_state_data['Type'].unique())
+    
+    col1, col2 = st.columns(2)
     
     with col1:
-        selected_township = st.selectbox('Township', townships, key='township_filter')
+        if len(available_tenures) == 1:
+            selected_tenure = available_tenures[0]
+            st.info(f'Tenure: **{selected_tenure}** (Auto-filled)')
+        else:
+            selected_tenure = st.selectbox('Tenure', available_tenures, key='tenure_filter')
+    
     with col2:
-        selected_area = st.selectbox('Area', areas, key='area_filter')
-    with col3:
-        selected_state = st.selectbox('State', states, key='state_filter')
-    
-    col4, col5 = st.columns(2)
-    
-    with col4:
-        selected_tenure = st.selectbox('Tenure', tenures, key='tenure_filter')
-    with col5:
-        selected_type = st.selectbox('Type', types, key='type_filter')
+        if len(available_types) == 1:
+            selected_type = available_types[0]
+            st.info(f'Type: **{selected_type}** (Auto-filled)')
+        else:
+            selected_type = st.selectbox('Type', available_types, key='type_filter')
     
     st.markdown('---')
     
-    # Filter data based on user selections
+    # Filter data based on all selections
     filtered_data = data[
         (data['Township'] == selected_township) &
         (data['Area'] == selected_area) &
@@ -807,5 +829,5 @@ with tab4:
         st.info(summary_text)
         
     else:
-        st.warning('❌ No matching properties found for the selected criteria. Please try different selections.')
+        st.warning('❌ No matching properties found for the selected criteria.')
 
