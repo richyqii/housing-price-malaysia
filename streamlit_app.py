@@ -860,49 +860,14 @@ with tab4:
         best_pred_category = svm_pred_category
         best_category_label = svm_category_label
     
-    # Display best model prediction prominently
-    col_best = st.columns(1)[0]
-    with col_best:
-        st.markdown(f'### 🏆 Best Model: **{best_model_name}** (Test Accuracy: {best_model_accuracy:.2%})')
-        st.metric('Predicted Price Category', best_category_label)
+    # Display best model prediction
+    st.markdown(f'### 🏆 {best_model_name}')
+    st.metric('Predicted Price Category', best_category_label)
     
     st.markdown('---')
     
-    # Show all models for comparison
-    st.subheader('📊 All Models Comparison')
-    
-    col_pred1, col_pred2, col_pred3 = st.columns(3)
-    
-    with col_pred1:
-        st.markdown(f'**Decision Tree** {"✓ BEST" if best_model_name == "Decision Tree" else ""}')
-        st.write(f"Prediction: **{dt_category_label}**")
-        st.write(f"Accuracy: {dt_test_acc:.2%}")
-    
-    with col_pred2:
-        st.markdown(f'**ANN** {"✓ BEST" if best_model_name == "ANN" else ""}')
-        st.write(f"Prediction: **{ann_category_label}**")
-        st.write(f"Accuracy: {ann_test_acc:.2%}")
-        if best_model_name == 'ANN':
-            st.write(f"**Confidence:** {ann_pred_proba[best_pred_category]:.2%}")
-    
-    with col_pred3:
-        st.markdown(f'**SVM** {"✓ BEST" if best_model_name == "SVM" else ""}')
-        st.write(f"Prediction: **{svm_category_label}**")
-        st.write(f"Accuracy: {svm_test_acc:.2%}")
-    
-    st.markdown('---')
-    
-    # Display input features table
-    st.subheader('📋 Selected Features Summary')
-    
-    features_summary = pd.DataFrame({
-        'Feature': ['Township', 'Area', 'State', 'Tenure', 'Type'],
-        'Selected Value': [selected_township, selected_area, selected_state, selected_tenure, selected_type]
-    })
-    
-    st.dataframe(features_summary, use_container_width=True, hide_index=True)
-    
-    st.markdown('---')
+    # Additional Predictions Data using Best Model
+    st.subheader('📊 Market Insights - Best Model Analysis')
     
     # Market Visualizations using Best Model's Prediction
     st.subheader(f'📊 Market Visualizations ({best_model_name} - Price Category: {best_category_label})')
@@ -1042,14 +1007,4 @@ with tab4:
         ax.set_title(f'{best_category_label} Category - Tenure Types', fontsize=12, fontweight='bold')
         ax.grid(axis='y', alpha=0.3)
         st.pyplot(fig)
-    
-    st.markdown('---')
-    
-    # Show similar properties if found
-    if len(similar_properties) > 0:
-        st.subheader('📊 Similar Properties in Dataset')
-        st.dataframe(
-            similar_properties[['Township', 'Area', 'State', 'Tenure', 'Type', 'Median_Price', 'Median_PSF', 'Transactions', 'Price_Category']].head(5),
-            use_container_width=True
-        )
 
