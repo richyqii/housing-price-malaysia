@@ -11,6 +11,7 @@ from sklearn.preprocessing import OneHotEncoder, StandardScaler, label_binarize
 from sklearn.impute import SimpleImputer
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.neural_network import MLPClassifier
 from sklearn.svm import SVC
 from sklearn.metrics import (
     accuracy_score,
@@ -129,14 +130,22 @@ def train_decision_tree(X_train, X_test, y_train, y_test):
     return model, y_train_pred, y_test_pred, y_test_proba
 
 # =========================
-# Train Random Forest Model
+# Train ANN Model
 # =========================
 @st.cache_data
-def train_random_forest(X_train, X_test, y_train, y_test):
+def train_ann(X_train, X_test, y_train, y_test):
     preprocessor = create_preprocessor()
     model = Pipeline([
         ('preprocessor', preprocessor),
-        ('rf', RandomForestClassifier(random_state=42))
+        ('ann', MLPClassifier(
+            hidden_layer_sizes=(100, 50),
+            activation='relu',
+            solver='adam',
+            alpha=0.0005,
+            learning_rate_init=0.001,
+            max_iter=300,
+            random_state=42
+        ))
     ])
     
     model.fit(X_train, y_train)
@@ -198,13 +207,13 @@ def train_svm(X_train, X_test, y_train, y_test):
 
 # Train all models
 dt_model, dt_train_pred, dt_test_pred, dt_test_proba = train_decision_tree(X_train, X_test, y_train, y_test)
-rf_model, rf_train_pred, rf_test_pred, rf_test_proba = train_random_forest(X_train, X_test, y_train, y_test)
+ann_model, ann_train_pred, ann_test_pred, ann_test_proba = train_ann(X_train, X_test, y_train, y_test)
 svm_model, svm_train_pred, svm_test_pred, svm_test_proba, svm_best_params, svm_best_score = train_svm(X_train, X_test, y_train, y_test)
 
 # =========================
 # Create tabs for each model
 # =========================
-tab1, tab2, tab3, tab4 = st.tabs(["🌳 Decision Tree", "🌲 Random Forest", "🤖 Support Vector Machine", "🔍 Price Filter"])
+tab1, tab2, tab3, tab4 = st.tabs(["🌳 Decision Tree", "🧠 Artificial Neural Network", "🤖 Support Vector Machine", "🔍 Price Filter"])
 
 labels = ['Low', 'Medium', 'High']
 
@@ -317,10 +326,15 @@ with tab1:
     st.subheader('Predicted Class Distribution')
     fig, ax = plt.subplots(figsize=(8, 4))
     unique, counts = np.unique(dt_test_pred, return_counts=True)
-    ax.bar(labels, counts, color=['lightcoral', 'lightyellow', 'lightgreen'])
+    bars = ax.bar(labels, counts, color=['lightcoral', 'lightyellow', 'lightgreen'])
     ax.set_title("Distribution of Predicted Price Categories")
     ax.set_xlabel("Price Category")
     ax.set_ylabel("Count")
+    for bar in bars:
+        height = bar.get_height()
+        ax.text(bar.get_x() + bar.get_width()/2., height/2.,
+                f'{int(height)}',
+                ha='center', va='center', fontweight='bold', color='black', fontsize=12)
     st.pyplot(fig)
     
     # ROC Curve
@@ -359,72 +373,72 @@ with tab1:
     st.pyplot(fig)
 
 # ============================================
-# RANDOM FOREST TAB
+# ANN TAB
 # ============================================
 with tab2:
-    st.header("Random Forest Classifier")
+    st.header("Artificial Neural Network (ANN) Classifier")
     
     # Performance Metrics
     st.subheader("Model Performance")
-    rf_train_acc = accuracy_score(y_train, rf_train_pred)
-    rf_test_acc = accuracy_score(y_test, rf_test_pred)
-    rf_total_acc = accuracy_score(
+    ann_train_acc = accuracy_score(y_train, ann_train_pred)
+    ann_test_acc = accuracy_score(y_test, ann_test_pred)
+    ann_total_acc = accuracy_score(
         pd.concat([y_train, y_test]),
-        np.concatenate([rf_train_pred, rf_test_pred])
+        np.concatenate([ann_train_pred, ann_test_pred])
     )
-    rf_mse = mean_squared_error(y_test, rf_test_pred)
-    rf_rmse = np.sqrt(rf_mse)
+    ann_mse = mean_squared_error(y_test, ann_test_pred)
+    ann_rmse = np.sqrt(ann_mse)
     
     col1, col2, col3, col4, col5 = st.columns(5)
     with col1:
-        st.metric('Total Accuracy', f'{rf_total_acc:.4f}')
+        st.metric('Total Accuracy', f'{ann_total_acc:.4f}')
     with col2:
-        st.metric('Train Accuracy', f'{rf_train_acc:.4f}')
+        st.metric('Train Accuracy', f'{ann_train_acc:.4f}')
     with col3:
-        st.metric('Test Accuracy', f'{rf_test_acc:.4f}')
+        st.metric('Test Accuracy', f'{ann_test_acc:.4f}')
     with col4:
-        st.metric('MSE', f'{rf_mse:.4f}')
+        st.metric('MSE', f'{ann_mse:.4f}')
     with col5:
-        st.metric('RMSE', f'{rf_rmse:.4f}')
+        st.metric('RMSE', f'{ann_rmse:.4f}')
     
     st.markdown('---')
     
     # Classification Report
     st.subheader('Classification Report')
-    rf_class_report = pd.DataFrame(
+    ann_class_report = pd.DataFrame(
         classification_report(
-            y_test, rf_test_pred,
+            y_test, ann_test_pred,
             target_names=labels,
             output_dict=True
         )
     ).transpose()
-    st.dataframe(rf_class_report, use_container_width=True)
+    st.dataframe(ann_class_report, use_container_width=True)
     
     # Confusion Matrix
     st.subheader('Confusion Matrix')
-    rf_cm = confusion_matrix(y_test, rf_test_pred)
-    rf_cm_df = pd.DataFrame(
-        rf_cm,
+    ann_cm = confusion_matrix(y_test, ann_test_pred)
+    ann_cm_df = pd.DataFrame(
+        ann_cm,
         index=['Actual Low', 'Actual Medium', 'Actual High'],
         columns=['Pred Low', 'Pred Medium', 'Pred High']
     )
-    st.dataframe(rf_cm_df, use_container_width=True)
+    st.dataframe(ann_cm_df, use_container_width=True)
     
     # Confusion Report Details
     st.subheader('Confusion Report Details')
-    rf_confusion_details = []
+    ann_confusion_details = []
     for i, label in enumerate(labels):
-        TP = rf_cm[i, i]
-        FN = rf_cm[i, :].sum() - TP
-        FP = rf_cm[:, i].sum() - TP
-        TN = rf_cm.sum() - (TP + FP + FN)
-        rf_confusion_details.append([label, TP, FP, FN, TN])
+        TP = ann_cm[i, i]
+        FN = ann_cm[i, :].sum() - TP
+        FP = ann_cm[:, i].sum() - TP
+        TN = ann_cm.sum() - (TP + FP + FN)
+        ann_confusion_details.append([label, TP, FP, FN, TN])
     
-    rf_confusion_report = pd.DataFrame(
-        rf_confusion_details,
+    ann_confusion_report = pd.DataFrame(
+        ann_confusion_details,
         columns=['Class', 'TP', 'FP', 'FN', 'TN']
     )
-    st.dataframe(rf_confusion_report, use_container_width=True)
+    st.dataframe(ann_confusion_report, use_container_width=True)
     
     st.markdown('---')
     
@@ -436,13 +450,13 @@ with tab2:
     with col1:
         fig, ax = plt.subplots(figsize=(8, 5))
         sns.heatmap(
-            rf_class_report.iloc[:-3, :-1],
+            ann_class_report.iloc[:-3, :-1],
             annot=True,
             cmap="YlGnBu",
             fmt=".2f",
             ax=ax
         )
-        ax.set_title("Classification Report Heatmap (Random Forest)")
+        ax.set_title("Classification Report Heatmap (ANN)")
         ax.set_xlabel("Metrics")
         ax.set_ylabel("Classes")
         st.pyplot(fig)
@@ -450,7 +464,7 @@ with tab2:
     with col2:
         fig, ax = plt.subplots(figsize=(6, 4))
         sns.heatmap(
-            rf_cm,
+            ann_cm,
             annot=True,
             fmt='d',
             cmap='Blues',
@@ -460,51 +474,73 @@ with tab2:
         )
         ax.set_xlabel("Predicted")
         ax.set_ylabel("Actual")
-        ax.set_title("Confusion Matrix (Random Forest)")
+        ax.set_title("Confusion Matrix (ANN)")
         st.pyplot(fig)
+    
+    # Confusion Detail Heatmap
+    st.subheader('Confusion Report Heatmap')
+    fig, ax = plt.subplots(figsize=(7, 5))
+    confusion_heatmap_data = ann_confusion_report.set_index('Class')
+    sns.heatmap(
+        confusion_heatmap_data,
+        annot=True,
+        fmt='d',
+        cmap='Oranges',
+        linewidths=0.5,
+        ax=ax
+    )
+    ax.set_title("Confusion Report Heatmap (ANN)")
+    ax.set_xlabel("Metrics (TP, FP, FN, TN)")
+    ax.set_ylabel("Classes")
+    st.pyplot(fig)
     
     # Predicted Class Distribution
     st.subheader('Predicted Class Distribution')
     fig, ax = plt.subplots(figsize=(8, 4))
-    unique, counts = np.unique(rf_test_pred, return_counts=True)
-    ax.bar(labels, counts, color=['lightcoral', 'lightyellow', 'lightgreen'])
-    ax.set_title("Distribution of Predicted Price Categories (Random Forest)")
+    unique, counts = np.unique(ann_test_pred, return_counts=True)
+    bars = ax.bar(labels, counts, color=['lightcoral', 'lightyellow', 'lightgreen'])
+    ax.set_title("Distribution of Predicted Price Categories (ANN)")
     ax.set_xlabel("Price Category")
     ax.set_ylabel("Count")
+    for bar in bars:
+        height = bar.get_height()
+        ax.text(bar.get_x() + bar.get_width()/2., height/2.,
+                f'{int(height)}',
+                ha='center', va='center', fontweight='bold', color='black', fontsize=12)
     st.pyplot(fig)
     
     # ROC Curve
     st.subheader('ROC Curve Analysis')
-    rf_y_test_bin = label_binarize(y_test, classes=[0, 1, 2])
-    rf_fpr, rf_tpr, rf_roc_auc = {}, {}, {}
+    ann_y_test_bin = label_binarize(y_test, classes=[0, 1, 2])
+    ann_fpr, ann_tpr, ann_roc_auc = {}, {}, {}
     
     for i in range(3):
-        rf_fpr[i], rf_tpr[i], _ = roc_curve(rf_y_test_bin[:, i], rf_test_proba[:, i])
-        rf_roc_auc[i] = auc(rf_fpr[i], rf_tpr[i])
+        ann_fpr[i], ann_tpr[i], _ = roc_curve(ann_y_test_bin[:, i], ann_test_proba[:, i])
+        ann_roc_auc[i] = auc(ann_fpr[i], ann_tpr[i])
     
-    rf_macro_roc_auc = roc_auc_score(rf_y_test_bin, rf_test_proba, multi_class='ovr', average='macro')
+    ann_macro_roc_auc = roc_auc_score(ann_y_test_bin, ann_test_proba, multi_class='ovr', average='macro')
     
     auc_col1, auc_col2, auc_col3, auc_col4 = st.columns(4)
     with auc_col1:
-        st.metric('AUC - Low', f'{rf_roc_auc[0]:.4f}')
+        st.metric('AUC - Low', f'{ann_roc_auc[0]:.4f}')
     with auc_col2:
-        st.metric('AUC - Medium', f'{rf_roc_auc[1]:.4f}')
+        st.metric('AUC - Medium', f'{ann_roc_auc[1]:.4f}')
     with auc_col3:
-        st.metric('AUC - High', f'{rf_roc_auc[2]:.4f}')
+        st.metric('AUC - High', f'{ann_roc_auc[2]:.4f}')
     with auc_col4:
-        st.metric('Macro Avg AUC', f'{rf_macro_roc_auc:.4f}')
+        st.metric('Macro Avg AUC', f'{ann_macro_roc_auc:.4f}')
     
     fig, ax = plt.subplots(figsize=(8, 6))
     colors = ['blue', 'green', 'red']
     for i, color in zip(range(3), colors):
         ax.plot(
-            rf_fpr[i], rf_tpr[i], color=color, lw=2,
-            label=f'ROC curve of class {labels[i]} (AUC = {rf_roc_auc[i]:.2f})'
+            ann_fpr[i], ann_tpr[i], color=color, lw=2,
+            label=f'ROC curve of class {labels[i]} (AUC = {ann_roc_auc[i]:.2f})'
         )
     ax.plot([0, 1], [0, 1], 'k--', lw=1)
     ax.set_xlabel('False Positive Rate')
     ax.set_ylabel('True Positive Rate')
-    ax.set_title('Multiclass ROC Curve (Random Forest)')
+    ax.set_title('Multiclass ROC Curve (ANN)')
     ax.legend(loc="lower right")
     st.pyplot(fig)
 
@@ -643,10 +679,15 @@ with tab3:
     st.subheader('Predicted Class Distribution')
     fig, ax = plt.subplots(figsize=(8, 4))
     unique, counts = np.unique(svm_test_pred, return_counts=True)
-    ax.bar(labels, counts, color=['lightcoral', 'lightyellow', 'lightgreen'])
+    bars = ax.bar(labels, counts, color=['lightcoral', 'lightyellow', 'lightgreen'])
     ax.set_title("Distribution of Predicted Price Categories (Tuned SVM)")
     ax.set_xlabel("Price Category")
     ax.set_ylabel("Count")
+    for bar in bars:
+        height = bar.get_height()
+        ax.text(bar.get_x() + bar.get_width()/2., height/2.,
+                f'{int(height)}',
+                ha='center', va='center', fontweight='bold', color='black', fontsize=12)
     st.pyplot(fig)
     
     # ROC Curve
