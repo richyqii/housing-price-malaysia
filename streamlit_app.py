@@ -227,12 +227,19 @@ with tab0:
     
     st.markdown('---')
     
-    st.subheader('📊 Dataset Overview')
+    st.subheader('🎯 Objectives')
     st.write("""
-    The dataset consists of **2,000 records**, with each record representing a property transaction. 
-    The dataset contains comprehensive information about Malaysian residential properties, enabling detailed analysis 
-    of housing price patterns and market trends across different regions and property types.
+    The main objectives of this project are:
+    - **Price Prediction**: Predict housing price categories based on property features
+    - **Model Comparison**: Compare performance of three different machine learning algorithms
+    - **Features Analysis**: Understand which property attributes influence housing prices the most
+    - **Market Insights**: Provide insights into Malaysia's housing market through data-driven analysis
+    - **Decision Support**: Enable users to filter properties and get price predictions with model performance metrics
     """)
+    
+    st.markdown('---')
+    
+    st.subheader('📊 Dataset Overview')
     
     col1, col2 = st.columns(2)
     with col1:
