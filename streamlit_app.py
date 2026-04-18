@@ -58,16 +58,6 @@ def load_and_prepare_data():
 
 data, low, high = load_and_prepare_data()
 
-# Display dataset info
-st.header('📊 Dataset Overview')
-col1, col2, col3 = st.columns(3)
-with col1:
-    st.metric('Total Records', len(data))
-with col2:
-    st.metric('Features', len(data.columns))
-with col3:
-    st.metric('Price Range', f"RM {data['Median_Price'].min():.0f} - RM {data['Median_Price'].max():.0f}")
-
 st.markdown('---')
 
 # =========================
@@ -213,9 +203,90 @@ svm_model, svm_train_pred, svm_test_pred, svm_test_proba, svm_best_params, svm_b
 # =========================
 # Create tabs for each model
 # =========================
-tab1, tab2, tab3, tab4 = st.tabs(["🌳 Decision Tree", "🧠 Artificial Neural Network", "🤖 Support Vector Machine", "🔍 Price Filter"])
+tab0, tab1, tab2, tab3, tab4 = st.tabs(["📋 Project Overview", "🌳 Decision Tree", "🧠 Artificial Neural Network", "🤖 Support Vector Machine", "🔍 Price Filter"])
 
 labels = ['Low', 'Medium', 'High']
+
+# ============================================
+# PROJECT OVERVIEW TAB
+# ============================================
+with tab0:
+    st.header('🏠 Malaysia Housing Price Prediction - ML Models Comparison')
+    
+    st.markdown('---')
+    
+    st.subheader('📊 Project Overview')
+    st.write("""
+    This application provides a comprehensive analysis of Malaysia housing prices using three different machine learning models:
+    - **Decision Tree Classifier**: A simple, interpretable model based on decision rules
+    - **Artificial Neural Network (ANN)**: A deep learning model with multiple layers
+    - **Support Vector Machine (SVM)**: A powerful model optimized for classification tasks
+    
+    The models are trained to predict housing price categories (Low, Medium, High) based on property features.
+    """)
+    
+    st.markdown('---')
+    
+    st.subheader('📊 Dataset Overview')
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.metric('Total Records', len(data))
+    with col2:
+        st.metric('Features', len(data.columns))
+    with col3:
+        st.metric('Price Range', f"RM {data['Median_Price'].min():.0f} - RM {data['Median_Price'].max():.0f}")
+    
+    st.markdown('---')
+    
+    st.subheader('📈 Data Statistics')
+    
+    # Display basic statistics
+    col_stat1, col_stat2 = st.columns(2)
+    
+    with col_stat1:
+        st.write("**Price Category Distribution**")
+        category_dist = data['Price_Category'].value_counts().sort_index()
+        category_labels = ['Low', 'Medium', 'High']
+        category_df = pd.DataFrame({
+            'Category': [category_labels[i] for i in range(3)],
+            'Count': [category_dist.get(i, 0) for i in range(3)]
+        })
+        st.dataframe(category_df, use_container_width=True, hide_index=True)
+    
+    with col_stat2:
+        st.write("**Median Price Statistics**")
+        price_stats = pd.DataFrame({
+            'Metric': ['Mean', 'Median', 'Std Dev', 'Min', 'Max'],
+            'Value': [
+                f"RM {data['Median_Price'].mean():,.0f}",
+                f"RM {data['Median_Price'].median():,.0f}",
+                f"RM {data['Median_Price'].std():,.0f}",
+                f"RM {data['Median_Price'].min():,.0f}",
+                f"RM {data['Median_Price'].max():,.0f}"
+            ]
+        })
+        st.dataframe(price_stats, use_container_width=True, hide_index=True)
+    
+    st.markdown('---')
+    
+    st.subheader('📋 Features Used')
+    features_list = data.drop(columns=['Median_Price', 'Price_Category']).columns.tolist()
+    
+    col_features1, col_features2 = st.columns(2)
+    
+    with col_features1:
+        st.write("**Numerical Features**")
+        numerical_features = ['Median_PSF', 'Transactions']
+        for feat in numerical_features:
+            if feat in features_list:
+                st.write(f"- {feat}")
+    
+    with col_features2:
+        st.write("**Categorical Features**")
+        categorical_features = ['Township', 'Area', 'State', 'Tenure', 'Type']
+        for feat in categorical_features:
+            if feat in features_list:
+                st.write(f"- {feat}")
 
 # ============================================
 # DECISION TREE TAB
