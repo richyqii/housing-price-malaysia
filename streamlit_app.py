@@ -801,6 +801,107 @@ with tab4:
             st.success(f"✅ Found {len(filtered_data)} properties in {selected_township} - {price_category} Category")
             st.markdown('---')
             
+            # ============================================
+            # PREDICTION SECTION
+            # ============================================
+            st.subheader('🔮 Model Predictions')
+            st.markdown('**Based on your selected features, here are the predictions:**')
+            
+            # Create feature vector for prediction
+            pred_df = pd.DataFrame({
+                'Township': [selected_township],
+                'Area': [selected_area],
+                'State': [selected_state],
+                'Tenure': [selected_tenure],
+                'Type': [selected_type]
+            })
+            
+            # Make predictions with all three models (they predict price category)
+            dt_pred_cat = dt_model.predict(pred_df)[0]
+            ann_pred_cat = ann_model.predict(pred_df)[0]
+            svm_pred_cat = svm_model.predict(pred_df)[0]
+            
+            # Get actual values from filtered data for comparison
+            actual_sample = filtered_data.iloc[0]
+            actual_median_price = actual_sample['Median_Price']
+            actual_median_psf = actual_sample['Median_PSF']
+            actual_transactions = actual_sample['Transactions']
+            actual_price_category = actual_sample['Price_Category']
+            
+            # Calculate average values for the predicted category from the entire dataset
+            dt_category_data = data[data['Price_Category'] == dt_pred_cat]
+            ann_category_data = data[data['Price_Category'] == ann_pred_cat]
+            svm_category_data = data[data['Price_Category'] == svm_pred_cat]
+            
+            dt_avg_price = dt_category_data['Median_Price'].mean()
+            dt_avg_psf = dt_category_data['Median_PSF'].mean()
+            dt_avg_trans = dt_category_data['Transactions'].mean()
+            
+            ann_avg_price = ann_category_data['Median_Price'].mean()
+            ann_avg_psf = ann_category_data['Median_PSF'].mean()
+            ann_avg_trans = ann_category_data['Transactions'].mean()
+            
+            svm_avg_price = svm_category_data['Median_Price'].mean()
+            svm_avg_psf = svm_category_data['Median_PSF'].mean()
+            svm_avg_trans = svm_category_data['Transactions'].mean()
+            
+            # Display predictions in columns
+            col_pred1, col_pred2, col_pred3 = st.columns(3)
+            
+            with col_pred1:
+                st.markdown('**💰 Median Price (RM)**')
+                st.metric('Actual', f"RM {actual_median_price:,.0f}")
+                st.write('**Model Predictions:**')
+                st.write(f"🌳 DT: RM {dt_avg_price:,.0f}")
+                st.write(f"🧠 ANN: RM {ann_avg_price:,.0f}")
+                st.write(f"🤖 SVM: RM {svm_avg_price:,.0f}")
+            
+            with col_pred2:
+                st.markdown('**📏 Median PSF (RM/psf)**')
+                st.metric('Actual', f"{actual_median_psf:.2f}")
+                st.write('**Model Predictions:**')
+                st.write(f"🌳 DT: {dt_avg_psf:.2f}")
+                st.write(f"🧠 ANN: {ann_avg_psf:.2f}")
+                st.write(f"🤖 SVM: {svm_avg_psf:.2f}")
+            
+            with col_pred3:
+                st.markdown('**📊 Transactions**')
+                st.metric('Actual', f"{int(actual_transactions)}")
+                st.write('**Model Predictions:**')
+                st.write(f"🌳 DT: {int(dt_avg_trans)}")
+                st.write(f"🧠 ANN: {int(ann_avg_trans)}")
+                st.write(f"🤖 SVM: {int(svm_avg_trans)}")
+            
+            # Display price category prediction
+            st.markdown('---')
+            st.markdown('**🏠 Price Category Prediction**')
+            col_cat1, col_cat2, col_cat3, col_cat4 = st.columns(4)
+            
+            cat_label = {0: 'Low', 1: 'Medium', 2: 'High'}
+            cat_color = {0: '🟢', 1: '🟡', 2: '🔴'}
+            
+            with col_cat1:
+                actual_cat_label = cat_label[actual_price_category]
+                actual_cat_emoji = cat_color[actual_price_category]
+                st.metric('Actual', f"{actual_cat_emoji} {actual_cat_label}")
+            
+            with col_cat2:
+                dt_cat_label = cat_label[dt_pred_cat]
+                dt_cat_emoji = cat_color[dt_pred_cat]
+                st.metric('📊 Decision Tree', f"{dt_cat_emoji} {dt_cat_label}")
+            
+            with col_cat3:
+                ann_cat_label = cat_label[ann_pred_cat]
+                ann_cat_emoji = cat_color[ann_pred_cat]
+                st.metric('🧠 ANN', f"{ann_cat_emoji} {ann_cat_label}")
+            
+            with col_cat4:
+                svm_cat_label = cat_label[svm_pred_cat]
+                svm_cat_emoji = cat_color[svm_pred_cat]
+                st.metric('🤖 SVM', f"{svm_cat_emoji} {svm_cat_label}")
+            
+            st.markdown('---')
+            
             # Get aggregated values for visualizations (not displayed, just for calculations)
             sample = filtered_data.iloc[0]
             median_price = sample['Median_Price']
