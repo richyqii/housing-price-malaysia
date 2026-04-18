@@ -862,7 +862,7 @@ with tab4:
     st.markdown('---')
     
     # Model Performance Analysis
-    st.subheader(f'📊 {selected_model} - Model Performance Analysis')
+    st.subheader(f'📊 {selected_model} - Model Performance Metrics')
     
     # Classification Report
     model_class_report = pd.DataFrame(
@@ -873,28 +873,28 @@ with tab4:
         )
     ).transpose()
     
-    # Extract metrics for display
-    model_accuracy = accuracy_score(y_test, model_pred) * 100
-    model_precision_weighted = model_class_report.loc['weighted avg', 'precision'] * 100
-    model_recall_weighted = model_class_report.loc['weighted avg', 'recall'] * 100
-    model_f1_weighted = model_class_report.loc['weighted avg', 'f1-score'] * 100
+    # Calculate overall metrics
+    overall_accuracy = accuracy_score(y_test, model_pred)
+    overall_precision = model_class_report.loc['weighted avg', 'precision'] * 100
+    overall_recall = model_class_report.loc['weighted avg', 'recall'] * 100
+    overall_f1 = model_class_report.loc['weighted avg', 'f1-score'] * 100
     
-    # Display performance metrics as percentage
-    st.subheader('📊 Performance Metrics (%)')
+    # Display metrics as percentage cards
+    col_m1, col_m2, col_m3, col_m4 = st.columns(4)
     
-    col_metrics1, col_metrics2, col_metrics3, col_metrics4 = st.columns(4)
+    with col_m1:
+        st.metric('Accuracy', f'{overall_accuracy*100:.2f}%')
     
-    with col_metrics1:
-        st.metric('Accuracy', f'{model_accuracy:.2f}%')
+    with col_m2:
+        st.metric('Precision', f'{overall_precision:.2f}%')
     
-    with col_metrics2:
-        st.metric('Precision', f'{model_precision_weighted:.2f}%')
+    with col_m3:
+        st.metric('Recall', f'{overall_recall:.2f}%')
     
-    with col_metrics3:
-        st.metric('Recall', f'{model_recall_weighted:.2f}%')
+    with col_m4:
+        st.metric('F1-Score', f'{overall_f1:.2f}%')
     
-    with col_metrics4:
-        st.metric('F1-Score', f'{model_f1_weighted:.2f}%')
+    st.markdown('---')
     
     # Confusion Matrix
     st.subheader('Confusion Matrix')
