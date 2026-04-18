@@ -332,6 +332,12 @@ with tab0:
     # Calculate correlation matrix for numerical columns
     correlation_matrix = data.select_dtypes(include=['float64', 'int64']).corr()
     
+    # Display correlation matrix as table
+    st.write("**Correlation Matrix Table:**")
+    st.dataframe(correlation_matrix.round(3), use_container_width=True)
+    
+    st.markdown('---')
+    
     # Create a mask for the upper triangle, including the diagonal
     mask = np.triu(np.ones_like(correlation_matrix, dtype=bool))
     
