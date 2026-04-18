@@ -853,45 +853,48 @@ with tab4:
     if best_model_name == 'Decision Tree':
         best_pred_category = dt_pred_category
         best_category_label = dt_category_label
-        best_pred_test = dt_test_pred
-        best_proba_test = dt_test_proba
     elif best_model_name == 'ANN':
         best_pred_category = ann_pred_category
         best_category_label = ann_category_label
-        best_pred_test = ann_test_pred
-        best_proba_test = ann_test_proba
     else:  # SVM
         best_pred_category = svm_pred_category
         best_category_label = svm_category_label
-        best_pred_test = svm_test_pred
-        best_proba_test = svm_test_proba
     
     # Display best model prediction
-    st.write(f"### Best Model: {best_model_name}")
+    st.markdown(f'### 🏆 Best Model : {best_model_name}')
     st.metric('Predicted Price Category', best_category_label)
     
     st.markdown('---')
     
-    # Best Model Analysis - Classification Report, Confusion Matrix, and Visualizations
-    st.subheader(f'🔍 {best_model_name} - Model Analysis')
+    # Best Model Performance Analysis
+    st.subheader(f'📊 {best_model_name} - Model Performance Analysis')
     
-    # Calculate metrics for best model
+    # Get best model's predictions for analysis
+    if best_model_name == 'Decision Tree':
+        best_pred = dt_test_pred
+        best_proba = dt_test_proba
+    elif best_model_name == 'ANN':
+        best_pred = ann_test_pred
+        best_proba = ann_test_proba
+    else:  # SVM
+        best_pred = svm_test_pred
+        best_proba = svm_test_proba
+    
+    # Classification Report
     best_class_report = pd.DataFrame(
         classification_report(
-            y_test, best_pred_test,
+            y_test, best_pred,
             target_names=labels,
             output_dict=True
         )
     ).transpose()
     
-    best_cm = confusion_matrix(y_test, best_pred_test)
-    
-    # Classification Report Table
-    st.write('**Classification Report**')
+    st.subheader('Classification Report')
     st.dataframe(best_class_report, use_container_width=True)
     
-    # Confusion Matrix Table
-    st.write('**Confusion Matrix**')
+    # Confusion Matrix
+    st.subheader('Confusion Matrix')
+    best_cm = confusion_matrix(y_test, best_pred)
     best_cm_df = pd.DataFrame(
         best_cm,
         index=['Actual Low', 'Actual Medium', 'Actual High'],
@@ -900,7 +903,7 @@ with tab4:
     st.dataframe(best_cm_df, use_container_width=True)
     
     # Confusion Report Details
-    st.write('**Confusion Report Details**')
+    st.subheader('Confusion Report Details')
     best_confusion_details = []
     for i, label in enumerate(labels):
         TP = best_cm[i, i]
@@ -918,12 +921,12 @@ with tab4:
     st.markdown('---')
     
     # Visualizations for Best Model
-    st.subheader(f'📊 {best_model_name} - Visualizations')
+    st.subheader(f'📈 {best_model_name} - Visualizations')
     
-    viz_col1, viz_col2 = st.columns(2)
+    col_v1, col_v2 = st.columns(2)
     
-    # Classification Report Heatmap
-    with viz_col1:
+    # Heatmap 1: Classification Report
+    with col_v1:
         fig, ax = plt.subplots(figsize=(8, 5))
         sns.heatmap(
             best_class_report.iloc[:-3, :-1],
@@ -937,9 +940,9 @@ with tab4:
         ax.set_ylabel("Classes")
         st.pyplot(fig)
     
-    # Confusion Matrix Heatmap
-    with viz_col2:
-        fig, ax = plt.subplots(figsize=(6, 5))
+    # Heatmap 2: Confusion Matrix
+    with col_v2:
+        fig, ax = plt.subplots(figsize=(6, 4))
         sns.heatmap(
             best_cm,
             annot=True,
@@ -954,9 +957,9 @@ with tab4:
         ax.set_title(f"Confusion Matrix ({best_model_name})")
         st.pyplot(fig)
     
-    # Confusion Report Heatmap
-    st.subheader(f'Confusion Report Heatmap ({best_model_name})')
-    fig, ax = plt.subplots(figsize=(7, 4))
+    # Heatmap 3: Confusion Report
+    col_v3 = st.columns(1)[0]
+    fig, ax = plt.subplots(figsize=(8, 4))
     confusion_heatmap_data = best_confusion_report.set_index('Class')
     sns.heatmap(
         confusion_heatmap_data,
