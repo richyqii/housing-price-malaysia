@@ -875,9 +875,9 @@ with tab4:
     
     # Calculate overall metrics
     overall_accuracy = accuracy_score(y_test, model_pred)
-    overall_precision = model_class_report.loc['weighted avg', 'precision'] * 100
-    overall_recall = model_class_report.loc['weighted avg', 'recall'] * 100
-    overall_f1 = model_class_report.loc['weighted avg', 'f1-score'] * 100
+    overall_precision = model_class_report.loc['macro avg', 'precision'] * 100
+    overall_recall = model_class_report.loc['macro avg', 'recall'] * 100
+    overall_f1 = model_class_report.loc['macro avg', 'f1-score'] * 100
     
     # Display metrics as percentage cards
     col_m1, col_m2, col_m3, col_m4 = st.columns(4)
