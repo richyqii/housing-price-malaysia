@@ -873,96 +873,64 @@ with tab4:
         )
     ).transpose()
     
-    # Display metrics only for predicted category
-    col_pred1, col_pred2, col_pred3 = st.columns(3)
+    # Calculate overall accuracy
+    overall_accuracy = accuracy_score(y_test, model_pred)
+    
+    # Display metrics for predicted category
+    col_pred1, col_pred2, col_pred3, col_pred4 = st.columns(4)
     with col_pred1:
-        st.metric('Precision', f"{model_class_report.loc[model_category_label, 'precision']*100:.2f}%")
+        st.metric('Accuracy', f'{overall_accuracy*100:.2f}%')
     with col_pred2:
-        st.metric('Recall', f"{model_class_report.loc[model_category_label, 'recall']*100:.2f}%")
+        st.metric('Precision', f"{model_class_report.loc[model_category_label, 'precision']*100:.2f}%")
     with col_pred3:
+        st.metric('Recall', f"{model_class_report.loc[model_category_label, 'recall']*100:.2f}%")
+    with col_pred4:
         st.metric('F1-Score', f"{model_class_report.loc[model_category_label, 'f1-score']*100:.2f}%")
     
     st.markdown('---')
     
-    # Confusion Matrix
-    st.subheader('Confusion Matrix')
+    # Confusion Report Details for Predicted Category
+    st.subheader('Confusion Report - Predicted Category')
     model_cm = confusion_matrix(y_test, model_pred)
-    model_cm_df = pd.DataFrame(
-        model_cm,
-        index=['Actual Low', 'Actual Medium', 'Actual High'],
-        columns=['Pred Low', 'Pred Medium', 'Pred High']
-    )
-    st.dataframe(model_cm_df, use_container_width=True)
     
-    # Confusion Report Details
-    st.subheader('Confusion Report Details')
-    model_confusion_details = []
-    for i, label in enumerate(labels):
-        TP = model_cm[i, i]
-        FN = model_cm[i, :].sum() - TP
-        FP = model_cm[:, i].sum() - TP
-        TN = model_cm.sum() - (TP + FP + FN)
-        model_confusion_details.append([label, TP, FP, FN, TN])
+    # Get index of predicted category
+    pred_idx = labels.index(model_category_label)
     
-    model_confusion_report = pd.DataFrame(
-        model_confusion_details,
-        columns=['Class', 'TP', 'FP', 'FN', 'TN']
-    )
-    st.dataframe(model_confusion_report, use_container_width=True)
+    # Calculate TP, FP, FN, TN for predicted category
+    TP = model_cm[pred_idx, pred_idx]
+    FN = model_cm[pred_idx, :].sum() - TP
+    FP = model_cm[:, pred_idx].sum() - TP
+    TN = model_cm.sum() - (TP + FP + FN)
+    
+    # Display confusion metrics
+    col_conf1, col_conf2, col_conf3, col_conf4 = st.columns(4)
+    with col_conf1:
+        st.metric('TP', f'{int(TP)}')
+    with col_conf2:
+        st.metric('FP', f'{int(FP)}')
+    with col_conf3:
+        st.metric('FN', f'{int(FN)}')
+    with col_conf4:
+        st.metric('TN', f'{int(TN)}')
     
     st.markdown('---')
     
     # Visualizations for Selected Model
     st.subheader(f'📈 {selected_model} - Visualizations')
     
-    col_v1, col_v2 = st.columns(2)
+    col_v1 = st.columns(1)[0]
     
     # Heatmap 1: Classification Report
-    with col_v1:
-        fig, ax = plt.subplots(figsize=(8, 5))
-        sns.heatmap(
-            model_class_report.iloc[:-3, :-1],
-            annot=True,
-            cmap="YlGnBu",
-            fmt=".2f",
-            ax=ax
-        )
-        ax.set_title(f"Classification Report Heatmap ({selected_model})")
-        ax.set_xlabel("Metrics")
-        ax.set_ylabel("Classes")
-        st.pyplot(fig)
-    
-    # Heatmap 2: Confusion Matrix
-    with col_v2:
-        fig, ax = plt.subplots(figsize=(6, 4))
-        sns.heatmap(
-            model_cm,
-            annot=True,
-            fmt='d',
-            cmap='Blues',
-            xticklabels=labels,
-            yticklabels=labels,
-            ax=ax
-        )
-        ax.set_xlabel("Predicted")
-        ax.set_ylabel("Actual")
-        ax.set_title(f"Confusion Matrix ({selected_model})")
-        st.pyplot(fig)
-    
-    # Heatmap 3: Confusion Report
-    col_v3 = st.columns(1)[0]
-    fig, ax = plt.subplots(figsize=(8, 4))
-    confusion_heatmap_data = model_confusion_report.set_index('Class')
+    fig, ax = plt.subplots(figsize=(8, 5))
     sns.heatmap(
-        confusion_heatmap_data,
+        model_class_report.iloc[:-3, :-1],
         annot=True,
-        fmt='d',
-        cmap='Oranges',
-        linewidths=0.5,
+        cmap="YlGnBu",
+        fmt=".2f",
         ax=ax
     )
-    ax.set_title(f"Confusion Report Heatmap ({selected_model})")
-    ax.set_xlabel("Metrics (TP, FP, FN, TN)")
+    ax.set_title(f"Classification Report Heatmap ({selected_model})")
+    ax.set_xlabel("Metrics")
     ax.set_ylabel("Classes")
     st.pyplot(fig)
     
