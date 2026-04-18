@@ -319,6 +319,11 @@ with tab0:
             ]
         })
         st.dataframe(price_stats, use_container_width=True, hide_index=True)
+    
+    st.markdown('---')
+    
+    st.subheader('📊 Descriptive Statistics (All Columns)')
+    st.dataframe(data.describe().round(2), use_container_width=True)
 
 # ============================================
 # DECISION TREE TAB
