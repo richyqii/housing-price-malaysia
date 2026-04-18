@@ -864,13 +864,6 @@ with tab4:
     # Model Performance Analysis
     st.subheader(f'📊 {selected_model} - Model Performance Analysis')
     
-    # Calculate overall accuracy
-    model_accuracy = accuracy_score(y_test, model_pred)
-    
-    st.metric('Overall Accuracy', f'{model_accuracy:.1%}')
-    
-    st.markdown('---')
-    
     # Classification Report
     model_class_report = pd.DataFrame(
         classification_report(
@@ -880,14 +873,28 @@ with tab4:
         )
     ).transpose()
     
-    # Convert classification report to percentage format
-    model_class_report_pct = model_class_report.copy()
-    for col in ['precision', 'recall', 'f1-score']:
-        if col in model_class_report_pct.columns:
-            model_class_report_pct[col] = model_class_report_pct[col].apply(lambda x: f'{x*100:.1f}%')
+    # Extract metrics for display
+    model_accuracy = accuracy_score(y_test, model_pred) * 100
+    model_precision_weighted = model_class_report.loc['weighted avg', 'precision'] * 100
+    model_recall_weighted = model_class_report.loc['weighted avg', 'recall'] * 100
+    model_f1_weighted = model_class_report.loc['weighted avg', 'f1-score'] * 100
     
-    st.subheader('Classification Report (%)')
-    st.dataframe(model_class_report_pct[['precision', 'recall', 'f1-score', 'support']], use_container_width=True)
+    # Display performance metrics as percentage
+    st.subheader('📊 Performance Metrics (%)')
+    
+    col_metrics1, col_metrics2, col_metrics3, col_metrics4 = st.columns(4)
+    
+    with col_metrics1:
+        st.metric('Accuracy', f'{model_accuracy:.2f}%')
+    
+    with col_metrics2:
+        st.metric('Precision', f'{model_precision_weighted:.2f}%')
+    
+    with col_metrics3:
+        st.metric('Recall', f'{model_recall_weighted:.2f}%')
+    
+    with col_metrics4:
+        st.metric('F1-Score', f'{model_f1_weighted:.2f}%')
     
     # Confusion Matrix
     st.subheader('Confusion Matrix')
@@ -925,18 +932,15 @@ with tab4:
     # Heatmap 1: Classification Report
     with col_v1:
         fig, ax = plt.subplots(figsize=(8, 5))
-        # Create heatmap data with percentages
-        heatmap_data = model_class_report.iloc[:-3, :-1] * 100  # Exclude support and weighted avg rows, multiply by 100 for percentage
         sns.heatmap(
-            heatmap_data,
+            model_class_report.iloc[:-3, :-1],
             annot=True,
             cmap="YlGnBu",
-            fmt=".1f",
-            cbar_kws={'label': 'Percentage (%)'},
+            fmt=".2f",
             ax=ax
         )
-        ax.set_title(f"Classification Report Heatmap - {selected_model} (%)")
-        ax.set_xlabel("Metrics (%)")
+        ax.set_title(f"Classification Report Heatmap ({selected_model})")
+        ax.set_xlabel("Metrics")
         ax.set_ylabel("Classes")
         st.pyplot(fig)
     
