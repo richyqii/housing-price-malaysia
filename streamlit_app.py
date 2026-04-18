@@ -730,512 +730,156 @@ with tab3:
 # ============================================
 with tab4:
     st.header('🔍 Filter & Predict Housing Price')
-    
-    st.markdown('**Select Price Category First - System will show available Townships and auto-fill other properties**')
+    st.markdown('**Select property features below to get predictions**')
     st.markdown('---')
     
-    # Step 1: User selects Price Category (Median Price)
-    st.subheader('Step 1: Select Price Category')
-    col_price_info, col_cat_select = st.columns(2)
+    # Step 1: User selects properties
+    st.subheader('Step 1: Select Property Features')
     
-    with col_price_info:
-        st.markdown('**Price Range Guide:**')
-        st.markdown(f'🟢 **Low:** RM 0 - RM {low:,.0f}')
-        st.markdown(f'🟡 **Medium:** RM {low:,.0f} - RM {high:,.0f}')
-        st.markdown(f'🔴 **High:** RM {high:,.0f}+')
+    col1, col2, col3 = st.columns(3)
     
-    with col_cat_select:
-        price_category = st.radio('Select Category', ['Low', 'Medium', 'High'], key='price_category_filter')
-        category_num = 0 if price_category == 'Low' else (1 if price_category == 'Medium' else 2)
+    with col1:
+        selected_township = st.selectbox('Township', sorted(data['Township'].unique()), key='township_select')
+    
+    with col2:
+        selected_area = st.selectbox('Area', sorted(data['Area'].unique()), key='area_select')
+    
+    with col3:
+        selected_state = st.selectbox('State', sorted(data['State'].unique()), key='state_select')
+    
+    col4, col5 = st.columns(2)
+    
+    with col4:
+        selected_tenure = st.selectbox('Tenure', sorted(data['Tenure'].unique()), key='tenure_select')
+    
+    with col5:
+        selected_type = st.selectbox('Type', sorted(data['Type'].unique()), key='type_select')
     
     st.markdown('---')
     
-    # Step 2: Filter available townships for this price category
-    st.subheader('Step 2: Select Township')
-    category_data = data[data['Price_Category'] == category_num]
-    available_townships = sorted(category_data['Township'].unique())
+    # Step 2: Create input dataframe for prediction
+    st.subheader('Step 2: Predictions')
     
-    if len(available_townships) > 0:
-        st.info(f'📍 **{len(available_townships)} townships** available in {price_category} category')
-        selected_township = st.selectbox('Township', available_townships, key='township_filter')
-        
-        # Filter data by township and price category
-        filtered_by_township_price = data[
-            (data['Township'] == selected_township) &
-            (data['Price_Category'] == category_num)
-        ]
-        
-        st.markdown('---')
-        st.subheader('Step 3: Auto-filled Properties (Based on Dataset)')
-        
-        # Auto-fill Area (get first available)
-        available_areas = sorted(filtered_by_township_price['Area'].unique())
-        selected_area = available_areas[0] if len(available_areas) > 0 else None
-        st.info(f'Area: **{selected_area}** (Auto-filled)')
-        
-        # Auto-fill State (get first available)
-        available_states = sorted(filtered_by_township_price['State'].unique())
-        selected_state = available_states[0] if len(available_states) > 0 else None
-        st.info(f'State: **{selected_state}** (Auto-filled)')
-        
-        # Auto-fill Tenure (get first available)
-        available_tenures = sorted(filtered_by_township_price['Tenure'].unique())
-        selected_tenure = available_tenures[0] if len(available_tenures) > 0 else None
-        st.info(f'Tenure: **{selected_tenure}** (Auto-filled)')
-        
-        # Auto-fill Type (get first available)
-        available_types = sorted(filtered_by_township_price['Type'].unique())
-        selected_type = available_types[0] if len(available_types) > 0 else None
-        st.info(f'Type: **{selected_type}** (Auto-filled)')
-        
-        st.markdown('---')
-        
-        # Filter data based on selected township and price category
-        filtered_data = data[
-            (data['Township'] == selected_township) &
-            (data['Price_Category'] == category_num)
-        ]
-        
-        # Display results
-        if len(filtered_data) > 0:
-            st.success(f"✅ Found {len(filtered_data)} properties in {selected_township} - {price_category} Category")
-            st.markdown('---')
-            
-            # ============================================
-            # PREDICTION SECTION
-            # ============================================
-            st.subheader('🔮 Model Predictions')
-            st.markdown('**Based on your selected features, here are the predictions:**')
-            
-            # Create feature vector for prediction
-            pred_df = pd.DataFrame({
-                'Township': [selected_township],
-                'Area': [selected_area],
-                'State': [selected_state],
-                'Tenure': [selected_tenure],
-                'Type': [selected_type]
-            })
-            
-            # Make predictions with all three models (they predict price category)
-            dt_pred_cat = dt_model.predict(pred_df)[0]
-            ann_pred_cat = ann_model.predict(pred_df)[0]
-            svm_pred_cat = svm_model.predict(pred_df)[0]
-            
-            # Get actual values from filtered data for comparison
-            actual_sample = filtered_data.iloc[0]
-            actual_median_price = actual_sample['Median_Price']
-            actual_median_psf = actual_sample['Median_PSF']
-            actual_transactions = actual_sample['Transactions']
-            actual_price_category = actual_sample['Price_Category']
-            
-            # Calculate average values for the predicted category from the entire dataset
-            dt_category_data = data[data['Price_Category'] == dt_pred_cat]
-            ann_category_data = data[data['Price_Category'] == ann_pred_cat]
-            svm_category_data = data[data['Price_Category'] == svm_pred_cat]
-            
-            dt_avg_price = dt_category_data['Median_Price'].mean()
-            dt_avg_psf = dt_category_data['Median_PSF'].mean()
-            dt_avg_trans = dt_category_data['Transactions'].mean()
-            
-            ann_avg_price = ann_category_data['Median_Price'].mean()
-            ann_avg_psf = ann_category_data['Median_PSF'].mean()
-            ann_avg_trans = ann_category_data['Transactions'].mean()
-            
-            svm_avg_price = svm_category_data['Median_Price'].mean()
-            svm_avg_psf = svm_category_data['Median_PSF'].mean()
-            svm_avg_trans = svm_category_data['Transactions'].mean()
-            
-            # Display predictions in columns
-            col_pred1, col_pred2, col_pred3 = st.columns(3)
-            
-            with col_pred1:
-                st.markdown('**💰 Median Price (RM)**')
-                st.metric('Actual', f"RM {actual_median_price:,.0f}")
-                st.write('**Model Predictions:**')
-                st.write(f"🌳 DT: RM {dt_avg_price:,.0f}")
-                st.write(f"🧠 ANN: RM {ann_avg_price:,.0f}")
-                st.write(f"🤖 SVM: RM {svm_avg_price:,.0f}")
-            
-            with col_pred2:
-                st.markdown('**📏 Median PSF (RM/psf)**')
-                st.metric('Actual', f"{actual_median_psf:.2f}")
-                st.write('**Model Predictions:**')
-                st.write(f"🌳 DT: {dt_avg_psf:.2f}")
-                st.write(f"🧠 ANN: {ann_avg_psf:.2f}")
-                st.write(f"🤖 SVM: {svm_avg_psf:.2f}")
-            
-            with col_pred3:
-                st.markdown('**📊 Transactions**')
-                st.metric('Actual', f"{int(actual_transactions)}")
-                st.write('**Model Predictions:**')
-                st.write(f"🌳 DT: {int(dt_avg_trans)}")
-                st.write(f"🧠 ANN: {int(ann_avg_trans)}")
-                st.write(f"🤖 SVM: {int(svm_avg_trans)}")
-            
-            # Display price category prediction
-            st.markdown('---')
-            st.markdown('**🏠 Price Category Prediction**')
-            col_cat1, col_cat2, col_cat3, col_cat4 = st.columns(4)
-            
-            cat_label = {0: 'Low', 1: 'Medium', 2: 'High'}
-            cat_color = {0: '🟢', 1: '🟡', 2: '🔴'}
-            
-            with col_cat1:
-                actual_cat_label = cat_label[actual_price_category]
-                actual_cat_emoji = cat_color[actual_price_category]
-                st.metric('Actual', f"{actual_cat_emoji} {actual_cat_label}")
-            
-            with col_cat2:
-                dt_cat_label = cat_label[dt_pred_cat]
-                dt_cat_emoji = cat_color[dt_pred_cat]
-                st.metric('📊 Decision Tree', f"{dt_cat_emoji} {dt_cat_label}")
-            
-            with col_cat3:
-                ann_cat_label = cat_label[ann_pred_cat]
-                ann_cat_emoji = cat_color[ann_pred_cat]
-                st.metric('🧠 ANN', f"{ann_cat_emoji} {ann_cat_label}")
-            
-            with col_cat4:
-                svm_cat_label = cat_label[svm_pred_cat]
-                svm_cat_emoji = cat_color[svm_pred_cat]
-                st.metric('🤖 SVM', f"{svm_cat_emoji} {svm_cat_label}")
-            
-            st.markdown('---')
-            
-            # Get aggregated values for visualizations (not displayed, just for calculations)
-            sample = filtered_data.iloc[0]
-            median_price = sample['Median_Price']
-            median_psf = sample['Median_PSF']
-            transactions = sample['Transactions']
-            
-            # Display visualizations
-            st.subheader('📊 Market Visualizations')
-        
-            # Visualization 1: Price Category Distribution - Highlight Selected
-            col1, col2 = st.columns(2)
-        
-            with col1:
-                st.markdown('**Price Category Distribution (Your Selection Highlighted)**')
-                # Get price category breakdown across all market
-                category_counts = data['Price_Category'].value_counts().sort_index()
-                category_labels = ['Low', 'Medium', 'High']
-            
-                # Highlight selected category
-                colors_dist = []
-                for i, label in enumerate(category_labels):
-                    if (i == 0 and price_category == 'Low') or \
-                       (i == 1 and price_category == 'Medium') or \
-                       (i == 2 and price_category == 'High'):
-                        colors_dist.append('#FF6B6B')  # Bright red for selected
-                    else:
-                        colors_dist.append('#B8B8B8')  # Gray for others
-            
-                fig, ax = plt.subplots(figsize=(8, 5))
-                bars = ax.bar(category_labels, [category_counts.get(i, 0) for i in [0, 1, 2]], 
-                              color=colors_dist, edgecolor='black', linewidth=2)
-            
-                # Add value labels on bars
-                for bar in bars:
-                    height = bar.get_height()
-                    ax.text(bar.get_x() + bar.get_width()/2., height,
-                           f'{int(height)}',
-                           ha='center', va='bottom', fontweight='bold')
-            
-                ax.set_title(f'Your Property is in "{price_category}" Category', fontsize=12, fontweight='bold')
-                ax.set_ylabel('Number of Properties')
-                ax.set_xlabel('Price Category')
-                ax.grid(axis='y', alpha=0.3)
-                st.pyplot(fig)
-        
-            with col2:
-                st.markdown('**Median PSF by Type (Same Category - Highlighted)**')
-            
-                # Filter to same price category
-                category_num = 0 if price_category == 'Low' else (1 if price_category == 'Medium' else 2)
-                same_category_data = data[data['Price_Category'] == category_num]
-                type_psf = same_category_data.groupby('Type')['Median_PSF'].median().sort_values(ascending=False)
-            
-                # Remove duplicates by getting unique values
-                type_psf = type_psf[~type_psf.duplicated()]
-            
-                # Get color for line based on selected type
-                line_color = '#FF6B6B' if selected_type in type_psf.index else '#4472C4'
-            
-                fig, ax = plt.subplots(figsize=(10, 6))
-            
-                # Plot line chart
-                x_pos = range(len(type_psf))
-                ax.plot(x_pos, type_psf.values, marker='o', color=line_color, linewidth=3, 
-                       markersize=10, label=selected_type if selected_type in type_psf.index else 'Type')
-            
-                # Find key points
-                min_val = type_psf.min()
-                max_val = type_psf.max()
-                range_val = max_val - min_val
-            
-                # Find selected value and adjacent points (left and right neighbors)
-                selected_value = type_psf.get(selected_type) if selected_type in type_psf.index else None
-                selected_idx = None
-                right_idx = None  # neighbor to the right
-                left_idx = None   # neighbor to the left
-                right_value = None
-                left_value = None
-            
-                if selected_value is not None:
-                    selected_idx = list(type_psf.index).index(selected_type)
-                
-                    # Get right neighbor (next in sorted list)
-                    if selected_idx + 1 < len(type_psf):
-                        right_idx = selected_idx + 1
-                        right_value = type_psf.iloc[right_idx]
-                
-                    # Get left neighbor (previous in sorted list)
-                    if selected_idx - 1 >= 0:
-                        left_idx = selected_idx - 1
-                        left_value = type_psf.iloc[left_idx]
-            
-                # Add range annotation at top
-                ax.text(0.02, 0.98, f'Range: {min_val:.2f} - {max_val:.2f}', 
-                       transform=ax.transAxes, fontsize=10, fontweight='bold',
-                       bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.8),
-                       verticalalignment='top')
-            
-                # Add annotations far from the chart for selected, one higher, and one lower
-                label_offset_up = range_val * 0.3
-                label_offset_down = range_val * 0.25
-            
-                if selected_idx is not None:
-                    # Selected point - RED - above with up arrow
-                    ax.annotate(f'Your: {selected_value:.2f}', xy=(selected_idx, selected_value), 
-                               xytext=(selected_idx, max_val + label_offset_up),
-                               fontsize=11, fontweight='bold', color='#FF6B6B',
-                               ha='center', 
-                               arrowprops=dict(arrowstyle='->', color='#FF6B6B', lw=2.5))
-            
-                if right_idx is not None:
-                    # Right neighbor - GREEN - above with up arrow
-                    ax.annotate(f'Next: {right_value:.2f}', xy=(right_idx, right_value), 
-                               xytext=(right_idx, max_val + label_offset_up * 0.7),
-                               fontsize=10, fontweight='bold', color='#70AD47',
-                               ha='center', 
-                               arrowprops=dict(arrowstyle='->', color='#70AD47', lw=2))
-            
-                if left_idx is not None:
-                    # Left neighbor - ORANGE - below with down arrow
-                    ax.annotate(f'Prev: {left_value:.2f}', xy=(left_idx, left_value), 
-                               xytext=(left_idx, min_val - label_offset_down),
-                               fontsize=10, fontweight='bold', color='#FFA500',
-                               ha='center', 
-                               arrowprops=dict(arrowstyle='->', color='#FFA500', lw=2))
-            
-                ax.set_ylabel('Median PSF', fontsize=11, fontweight='bold')
-                ax.set_title(f'{price_category} Category - PSF Trend by Type', fontsize=12, fontweight='bold')
-                ax.set_xticks(x_pos)
-                ax.set_xticklabels(type_psf.index, rotation=45, ha='right')
-                ax.grid(axis='y', alpha=0.3, linestyle='--')
-                ax.set_ylim(min_val - label_offset_down * 1.5, max_val + label_offset_up * 1.5)
-                st.pyplot(fig)
-        
-            st.markdown('---')
-        
-            # Visualization 2: Transactions by Type - Highlight Selected
-            col3, col4 = st.columns(2)
-        
-            with col3:
-                st.markdown('**Transactions by Type (Same Category - Highlighted)**')
-            
-                # Filter to same price category
-                category_num = 0 if price_category == 'Low' else (1 if price_category == 'Medium' else 2)
-                same_category_data = data[data['Price_Category'] == category_num]
-                type_transactions = same_category_data.groupby('Type')['Transactions'].sum().sort_values(ascending=False)
-            
-                # Remove duplicates
-                type_transactions = type_transactions[~type_transactions.duplicated()]
-            
-                # Get color for line
-                line_color = '#FF6B6B' if selected_type in type_transactions.index else '#4472C4'
-            
-                fig, ax = plt.subplots(figsize=(10, 6))
-            
-                # Plot line chart
-                x_pos = range(len(type_transactions))
-                ax.plot(x_pos, type_transactions.values, marker='o', color=line_color, linewidth=3, 
-                       markersize=10, label=selected_type if selected_type in type_transactions.index else 'Type')
-            
-                # Find key points
-                min_val = type_transactions.min()
-                max_val = type_transactions.max()
-                range_val = max_val - min_val
-            
-                # Find selected value and adjacent points (left and right neighbors)
-                selected_trans = type_transactions.get(selected_type) if selected_type in type_transactions.index else None
-                selected_idx = None
-                right_idx = None
-                left_idx = None
-                right_trans = None
-                left_trans = None
-            
-                if selected_trans is not None:
-                    selected_idx = list(type_transactions.index).index(selected_type)
-                
-                    # Get right neighbor
-                    if selected_idx + 1 < len(type_transactions):
-                        right_idx = selected_idx + 1
-                        right_trans = type_transactions.iloc[right_idx]
-                
-                    # Get left neighbor
-                    if selected_idx - 1 >= 0:
-                        left_idx = selected_idx - 1
-                        left_trans = type_transactions.iloc[left_idx]
-            
-                # Add range annotation at top
-                ax.text(0.02, 0.98, f'Range: {int(min_val)} - {int(max_val)}', 
-                       transform=ax.transAxes, fontsize=10, fontweight='bold',
-                       bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.8),
-                       verticalalignment='top')
-            
-                # Add annotations
-                label_offset_up = range_val * 0.3
-                label_offset_down = range_val * 0.25
-            
-                if selected_idx is not None:
-                    # Selected point - RED
-                    ax.annotate(f'Your: {int(selected_trans)}', xy=(selected_idx, selected_trans), 
-                               xytext=(selected_idx, max_val + label_offset_up),
-                               fontsize=11, fontweight='bold', color='#FF6B6B',
-                               ha='center', 
-                               arrowprops=dict(arrowstyle='->', color='#FF6B6B', lw=2.5))
-            
-                if right_idx is not None:
-                    # Right neighbor - GREEN
-                    ax.annotate(f'Next: {int(right_trans)}', xy=(right_idx, right_trans), 
-                               xytext=(right_idx, max_val + label_offset_up * 0.7),
-                               fontsize=10, fontweight='bold', color='#70AD47',
-                               ha='center', 
-                               arrowprops=dict(arrowstyle='->', color='#70AD47', lw=2))
-            
-                if left_idx is not None:
-                    # Left neighbor - ORANGE
-                    ax.annotate(f'Prev: {int(left_trans)}', xy=(left_idx, left_trans), 
-                               xytext=(left_idx, min_val - label_offset_down),
-                               fontsize=10, fontweight='bold', color='#FFA500',
-                               ha='center', 
-                               arrowprops=dict(arrowstyle='->', color='#FFA500', lw=2))
-            
-                ax.set_ylabel('Total Transactions', fontsize=11, fontweight='bold')
-                ax.set_title(f'{price_category} Category - Activity by Type', fontsize=12, fontweight='bold')
-                ax.set_xticks(x_pos)
-                ax.set_xticklabels(type_transactions.index, rotation=45, ha='right')
-                ax.grid(axis='y', alpha=0.3, linestyle='--')
-                ax.set_ylim(min_val - label_offset_down * 1.5, max_val + label_offset_up * 1.5)
-                st.pyplot(fig)
-        
-            with col4:
-                st.markdown('**Transactions by State (Same Category - Highlighted)**')
-            
-                # Filter to same price category
-                category_num = 0 if price_category == 'Low' else (1 if price_category == 'Medium' else 2)
-                same_category_data = data[data['Price_Category'] == category_num]
-                state_transactions = same_category_data.groupby('State')['Transactions'].sum().sort_values(ascending=False)
-            
-                # Highlight selected state
-                colors_state_trans = []
-                for state in state_transactions.index:
-                    if state == selected_state:
-                        colors_state_trans.append('#FF6B6B')  # Bright red for selected
-                    else:
-                        colors_state_trans.append('#70AD47')  # Green for others
-            
-                fig, ax = plt.subplots(figsize=(8, 5))
-                bars = ax.bar(range(len(state_transactions)), state_transactions.values, color=colors_state_trans,
-                              edgecolor='black', linewidth=2)
-            
-                # Add value labels
-                for i, bar in enumerate(bars):
-                    height = bar.get_height()
-                    ax.text(bar.get_x() + bar.get_width()/2., height,
-                           f'{int(height)}',
-                           ha='center', va='bottom', fontweight='bold', fontsize=8)
-            
-                ax.set_ylabel('Total Transactions')
-                ax.set_title(f'{price_category} Category - Activity by State', fontsize=12, fontweight='bold')
-                ax.set_xticks(range(len(state_transactions)))
-                ax.set_xticklabels(state_transactions.index, rotation=45, ha='right', fontsize=9)
-                ax.grid(axis='y', alpha=0.3)
-                st.pyplot(fig)
-        
-            st.markdown('---')
-        
-            # Visualization 3: Median Price by State - Highlight Selected (Same Category)
-            st.markdown('**Median Price by State (Same Category - Highlighted)**')
-        
-            # Filter to same price category
-            category_num = 0 if price_category == 'Low' else (1 if price_category == 'Medium' else 2)
-            same_category_data = data[data['Price_Category'] == category_num]
-            state_prices = same_category_data.groupby('State')['Median_Price'].median().sort_values(ascending=False)
-        
-            # Highlight selected state
-            colors_state = []
-            for state in state_prices.index:
-                if state == selected_state:
-                    colors_state.append('#FF6B6B')  # Bright red for selected
-                else:
-                    colors_state.append('#4472C4')  # Blue for others
-        
-            fig, ax = plt.subplots(figsize=(12, 6))
-            bars = ax.barh(state_prices.index, state_prices.values, color=colors_state, 
-                           edgecolor='black', linewidth=1.5)
-        
-            # Add value labels
-            for i, bar in enumerate(bars):
-                width = bar.get_width()
-                ax.text(width, bar.get_y() + bar.get_height()/2.,
-                       f' RM {width:,.0f}',
-                       ha='left', va='center', fontsize=9, fontweight='bold')
-        
-            ax.set_xlabel('Median Price (RM)', fontsize=11, fontweight='bold')
-            ax.set_title(f'{price_category} Category - Price by State', fontsize=12, fontweight='bold')
-            ax.invert_yaxis()
-            ax.grid(axis='x', alpha=0.3)
-            st.pyplot(fig)
-        
-            st.markdown('---')
-        
-            # Display detailed filtered data
-            st.subheader('Detailed Information')
-            display_cols = ['Township', 'Area', 'State', 'Tenure', 'Type', 'Median_Price', 'Median_PSF', 'Transactions']
-            st.dataframe(filtered_data[display_cols], use_container_width=True)
-        
-            st.markdown('---')
-        
-            # Summary section
-            st.subheader('📊 Summary')
-            summary_text = f"""
-            **Property Location Summary:**
-            - **Township:** {selected_township}
-            - **Area:** {selected_area}
-            - **State:** {selected_state}
-        
-            **Property Details:**
-            - **Tenure:** {selected_tenure}
-            - **Type:** {selected_type}
-        
-            **Market Analysis:**
-            - **Median Price:** RM {median_price:,.0f}
-            - **Price Category:** {price_category}
-            - **Price per Square Foot:** RM {median_psf:,.2f}
-            - **Market Activity:** {int(transactions)} transactions
-        
-            **Interpretation:**
-            This property falls in the **{price_category}** price range for {selected_state}.
-            With a median price of RM {median_price:,.0f}, it represents a
-            **{price_category.lower()} value** option in this market segment.
-            """
-            st.info(summary_text)
-        
-        else:
-            st.warning('❌ No matching properties found for the selected criteria.')
+    # Get statistics for numerical features
+    median_psf_mean = data['Median_PSF'].median()
+    transactions_mean = data['Transactions'].median()
     
+    # Create input data for prediction
+    input_data = pd.DataFrame({
+        'Township': [selected_township],
+        'Area': [selected_area],
+        'State': [selected_state],
+        'Tenure': [selected_tenure],
+        'Type': [selected_type],
+        'Median_PSF': [median_psf_mean],
+        'Transactions': [transactions_mean]
+    })
+    
+    # Make predictions using all three models
+    dt_pred_category = dt_model.predict(input_data)[0]
+    ann_pred_category = ann_model.predict(input_data)[0]
+    svm_pred_category = svm_model.predict(input_data)[0]
+    
+    # Get probability scores for ANN
+    ann_pred_proba = ann_model.predict_proba(input_data)[0]
+    
+    category_map = {0: 'Low', 1: 'Medium', 2: 'High'}
+    dt_category_label = category_map[dt_pred_category]
+    ann_category_label = category_map[ann_pred_category]
+    svm_category_label = category_map[svm_pred_category]
+    
+    # Get actual median price for similar properties
+    similar_properties = data[
+        (data['Township'] == selected_township) &
+        (data['Area'] == selected_area) &
+        (data['State'] == selected_state) &
+        (data['Tenure'] == selected_tenure) &
+        (data['Type'] == selected_type)
+    ]
+    
+    if len(similar_properties) > 0:
+        predicted_median_price = similar_properties['Median_Price'].mean()
+        predicted_median_psf = similar_properties['Median_PSF'].mean()
+        predicted_transactions = similar_properties['Transactions'].mean()
+        st.success(f'✅ Found {len(similar_properties)} matching property records')
     else:
-        st.error(f'❌ No townships available in the {price_category} category. Please select another category.')
-
+        # If no exact match, use category statistics
+        low = data['Median_Price'].quantile(0.33)
+        high = data['Median_Price'].quantile(0.66)
+        
+        if ann_pred_category == 0:  # Low
+            predicted_median_price = data[data['Price_Category'] == 0]['Median_Price'].mean()
+        elif ann_pred_category == 1:  # Medium
+            predicted_median_price = data[data['Price_Category'] == 1]['Median_Price'].mean()
+        else:  # High
+            predicted_median_price = data[data['Price_Category'] == 2]['Median_Price'].mean()
+        
+        predicted_median_psf = data['Median_PSF'].mean()
+        predicted_transactions = data['Transactions'].mean()
+        st.info('📊 No exact match found. Using category statistics for predictions.')
+    
+    st.markdown('---')
+    
+    # Display predictions in metric cards and details
+    st.subheader('📈 Predicted Values')
+    
+    col_metrics1, col_metrics2, col_metrics3, col_metrics4 = st.columns(4)
+    
+    with col_metrics1:
+        st.metric('Median Price', f"RM {predicted_median_price:,.0f}")
+    
+    with col_metrics2:
+        st.metric('Median PSF', f"RM {predicted_median_psf:.2f}")
+    
+    with col_metrics3:
+        st.metric('Transactions', f"{predicted_transactions:.0f}")
+    
+    with col_metrics4:
+        st.metric('Price Category (ANN)', ann_category_label)
+    
+    st.markdown('---')
+    
+    # Detailed predictions from all models
+    st.subheader('🤖 Model Predictions - Price Category')
+    
+    col_pred1, col_pred2, col_pred3 = st.columns(3)
+    
+    with col_pred1:
+        st.markdown('**Decision Tree**')
+        st.write(f"Predicted: **{dt_category_label}**")
+        st.caption(f"Category Code: {dt_pred_category}")
+    
+    with col_pred2:
+        st.markdown('**ANN (Recommended)**')
+        st.write(f"Predicted: **{ann_category_label}**")
+        st.write(f"**Confidence Scores:**")
+        st.write(f"- Low: {ann_pred_proba[0]:.2%}")
+        st.write(f"- Medium: {ann_pred_proba[1]:.2%}")
+        st.write(f"- High: {ann_pred_proba[2]:.2%}")
+    
+    with col_pred3:
+        st.markdown('**SVM**')
+        st.write(f"Predicted: **{svm_category_label}**")
+        st.caption(f"Category Code: {svm_pred_category}")
+    
+    st.markdown('---')
+    
+    # Display input features table
+    st.subheader('📋 Selected Features Summary')
+    
+    features_summary = pd.DataFrame({
+        'Feature': ['Township', 'Area', 'State', 'Tenure', 'Type'],
+        'Selected Value': [selected_township, selected_area, selected_state, selected_tenure, selected_type]
+    })
+    
+    st.dataframe(features_summary, use_container_width=True, hide_index=True)
+    
+    st.markdown('---')
+    
+    # Show similar properties if found
+    if len(similar_properties) > 0:
+        st.subheader('📊 Similar Properties in Dataset')
+        st.dataframe(
+            similar_properties[['Township', 'Area', 'State', 'Tenure', 'Type', 'Median_Price', 'Median_PSF', 'Transactions', 'Price_Category']].head(5),
+            use_container_width=True
+        )
