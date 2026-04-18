@@ -861,8 +861,113 @@ with tab4:
         best_category_label = svm_category_label
     
     # Display best model prediction
-    st.markdown(f'### 🏆 {best_model_name}')
+    st.write(f"**Best Model:** {best_model_name}")
     st.metric('Predicted Price Category', best_category_label)
+    
+    st.markdown('---')
+    
+    # Get best model's predictions for test set and generate metrics
+    if best_model_name == 'Decision Tree':
+        best_test_pred = dt_test_pred
+        best_test_proba = dt_test_proba
+    elif best_model_name == 'ANN':
+        best_test_pred = ann_test_pred
+        best_test_proba = ann_test_proba
+    else:  # SVM
+        best_test_pred = svm_test_pred
+        best_test_proba = svm_test_proba
+    
+    # Classification Report
+    st.subheader(f'📊 {best_model_name} - Classification Report')
+    best_class_report = pd.DataFrame(
+        classification_report(
+            y_test, best_test_pred,
+            target_names=labels,
+            output_dict=True
+        )
+    ).transpose()
+    st.dataframe(best_class_report, use_container_width=True)
+    
+    # Confusion Matrix
+    st.subheader(f'🔲 {best_model_name} - Confusion Matrix')
+    best_cm = confusion_matrix(y_test, best_test_pred)
+    best_cm_df = pd.DataFrame(
+        best_cm,
+        index=['Actual Low', 'Actual Medium', 'Actual High'],
+        columns=['Pred Low', 'Pred Medium', 'Pred High']
+    )
+    st.dataframe(best_cm_df, use_container_width=True)
+    
+    # Confusion Report Details
+    st.subheader(f'📋 {best_model_name} - Confusion Report')
+    best_confusion_details = []
+    for i, label in enumerate(labels):
+        TP = best_cm[i, i]
+        FN = best_cm[i, :].sum() - TP
+        FP = best_cm[:, i].sum() - TP
+        TN = best_cm.sum() - (TP + FP + FN)
+        best_confusion_details.append([label, TP, FP, FN, TN])
+    
+    best_confusion_report = pd.DataFrame(
+        best_confusion_details,
+        columns=['Class', 'TP', 'FP', 'FN', 'TN']
+    )
+    st.dataframe(best_confusion_report, use_container_width=True)
+    
+    st.markdown('---')
+    
+    # Visualizations
+    st.subheader(f'📈 {best_model_name} - Visualizations')
+    
+    col_viz_1, col_viz_2 = st.columns(2)
+    
+    # Heatmap 1: Classification Report
+    with col_viz_1:
+        fig, ax = plt.subplots(figsize=(8, 5))
+        sns.heatmap(
+            best_class_report.iloc[:-3, :-1],
+            annot=True,
+            cmap="YlGnBu",
+            fmt=".2f",
+            ax=ax
+        )
+        ax.set_title(f"{best_model_name} - Classification Report Heatmap")
+        ax.set_xlabel("Metrics")
+        ax.set_ylabel("Classes")
+        st.pyplot(fig)
+    
+    # Heatmap 2: Confusion Matrix
+    with col_viz_2:
+        fig, ax = plt.subplots(figsize=(6, 5))
+        sns.heatmap(
+            best_cm,
+            annot=True,
+            fmt='d',
+            cmap='Blues',
+            xticklabels=labels,
+            yticklabels=labels,
+            ax=ax
+        )
+        ax.set_xlabel("Predicted")
+        ax.set_ylabel("Actual")
+        ax.set_title(f"{best_model_name} - Confusion Matrix")
+        st.pyplot(fig)
+    
+    # Heatmap 3: Confusion Report
+    fig, ax = plt.subplots(figsize=(7, 5))
+    confusion_heatmap_data = best_confusion_report.set_index('Class')
+    sns.heatmap(
+        confusion_heatmap_data,
+        annot=True,
+        fmt='d',
+        cmap='Oranges',
+        linewidths=0.5,
+        ax=ax
+    )
+    ax.set_title(f"{best_model_name} - Confusion Report Heatmap")
+    ax.set_xlabel("Metrics (TP, FP, FN, TN)")
+    ax.set_ylabel("Classes")
+    st.pyplot(fig)
     
     st.markdown('---')
     
