@@ -823,7 +823,7 @@ with tab4:
     # Display predictions in metric cards and details
     st.subheader('📈 Predicted Values')
     
-    col_metrics1, col_metrics2, col_metrics3, col_metrics4 = st.columns(4)
+    col_metrics1, col_metrics2, col_metrics3 = st.columns(3)
     
     with col_metrics1:
         st.metric('Median Price', f"RM {predicted_median_price:,.0f}")
@@ -834,33 +834,61 @@ with tab4:
     with col_metrics3:
         st.metric('Transactions', f"{predicted_transactions:.0f}")
     
-    with col_metrics4:
-        st.metric('Price Category (ANN)', ann_category_label)
-    
     st.markdown('---')
     
     # Detailed predictions from all models
     st.subheader('🤖 Model Predictions - Price Category')
     
+    # Determine best model based on test accuracy
+    accuracies = {
+        'Decision Tree': dt_test_acc,
+        'ANN': ann_test_acc,
+        'SVM': svm_test_acc
+    }
+    
+    best_model_name = max(accuracies, key=accuracies.get)
+    best_model_accuracy = accuracies[best_model_name]
+    
+    # Get best model's prediction
+    if best_model_name == 'Decision Tree':
+        best_pred_category = dt_pred_category
+        best_category_label = dt_category_label
+    elif best_model_name == 'ANN':
+        best_pred_category = ann_pred_category
+        best_category_label = ann_category_label
+    else:  # SVM
+        best_pred_category = svm_pred_category
+        best_category_label = svm_category_label
+    
+    # Display best model prediction prominently
+    col_best = st.columns(1)[0]
+    with col_best:
+        st.markdown(f'### 🏆 Best Model: **{best_model_name}** (Test Accuracy: {best_model_accuracy:.2%})')
+        st.metric('Predicted Price Category', best_category_label)
+    
+    st.markdown('---')
+    
+    # Show all models for comparison
+    st.subheader('📊 All Models Comparison')
+    
     col_pred1, col_pred2, col_pred3 = st.columns(3)
     
     with col_pred1:
-        st.markdown('**Decision Tree**')
-        st.write(f"Predicted: **{dt_category_label}**")
-        st.caption(f"Category Code: {dt_pred_category}")
+        st.markdown(f'**Decision Tree** {"✓ BEST" if best_model_name == "Decision Tree" else ""}')
+        st.write(f"Prediction: **{dt_category_label}**")
+        st.write(f"Accuracy: {dt_test_acc:.2%}")
     
     with col_pred2:
-        st.markdown('**ANN (Recommended)**')
-        st.write(f"Predicted: **{ann_category_label}**")
-        st.write(f"**Confidence Scores:**")
-        st.write(f"- Low: {ann_pred_proba[0]:.2%}")
-        st.write(f"- Medium: {ann_pred_proba[1]:.2%}")
-        st.write(f"- High: {ann_pred_proba[2]:.2%}")
+        st.markdown(f'**ANN** {"✓ BEST" if best_model_name == "ANN" else ""}')
+        st.write(f"Prediction: **{ann_category_label}**")
+        st.write(f"Accuracy: {ann_test_acc:.2%}")
+        if best_model_name == 'ANN':
+            st.write(f"**Confidence:** {ann_pred_proba[best_pred_category]:.2%}")
     
     with col_pred3:
-        st.markdown('**SVM**')
-        st.write(f"Predicted: **{svm_category_label}**")
-        st.caption(f"Category Code: {svm_pred_category}")
+        st.markdown(f'**SVM** {"✓ BEST" if best_model_name == "SVM" else ""}')
+        st.write(f"Prediction: **{svm_category_label}**")
+        st.write(f"Accuracy: {svm_test_acc:.2%}")
     
     st.markdown('---')
     
@@ -876,10 +904,152 @@ with tab4:
     
     st.markdown('---')
     
+    # Market Visualizations using Best Model's Prediction
+    st.subheader(f'📊 Market Visualizations ({best_model_name} - Price Category: {best_category_label})')
+    
+    col_viz1, col_viz2 = st.columns(2)
+    
+    # Visualization 1: Price Category Distribution across market
+    with col_viz1:
+        st.markdown('**Market Price Category Distribution**')
+        
+        category_counts = data['Price_Category'].value_counts().sort_index()
+        category_labels_viz = ['Low', 'Medium', 'High']
+        
+        # Highlight the predicted category
+        colors = []
+        for i in range(3):
+            if i == best_pred_category:
+                colors.append('#FF6B6B')  # Red for predicted
+            else:
+                colors.append('#B8B8B8')  # Gray for others
+        
+        fig, ax = plt.subplots(figsize=(7, 4))
+        bars = ax.bar(category_labels_viz, [category_counts.get(i, 0) for i in range(3)], 
+                      color=colors, edgecolor='black', linewidth=1.5)
+        
+        # Add value labels
+        for bar in bars:
+            height = bar.get_height()
+            ax.text(bar.get_x() + bar.get_width()/2., height/2.,
+                   f'{int(height)}',
+                   ha='center', va='center', fontweight='bold', color='white', fontsize=11)
+        
+        ax.set_title(f'Your Property Predicted: {best_category_label}', fontsize=12, fontweight='bold')
+        ax.set_ylabel('Number of Properties')
+        ax.set_xlabel('Price Category')
+        ax.grid(axis='y', alpha=0.3)
+        st.pyplot(fig)
+    
+    # Visualization 2: Median Price by State (highlight selected state)
+    with col_viz2:
+        st.markdown('**Median Price by State**')
+        
+        # Filter to predicted price category
+        category_data_viz = data[data['Price_Category'] == best_pred_category]
+        state_prices = category_data_viz.groupby('State')['Median_Price'].median().sort_values(ascending=False).head(10)
+        
+        # Highlight selected state
+        colors_state = []
+        for state in state_prices.index:
+            if state == selected_state:
+                colors_state.append('#FF6B6B')  # Red for selected
+            else:
+                colors_state.append('#4472C4')  # Blue for others
+        
+        fig, ax = plt.subplots(figsize=(7, 4))
+        bars = ax.barh(range(len(state_prices)), state_prices.values, color=colors_state, edgecolor='black', linewidth=1)
+        
+        # Add value labels
+        for i, bar in enumerate(bars):
+            width = bar.get_width()
+            ax.text(width, bar.get_y() + bar.get_height()/2.,
+                   f' RM {int(width):,}',
+                   ha='left', va='center', fontweight='bold', fontsize=9)
+        
+        ax.set_yticks(range(len(state_prices)))
+        ax.set_yticklabels(state_prices.index)
+        ax.set_xlabel('Median Price (RM)')
+        ax.set_title(f'{best_category_label} Category - Top 10 States', fontsize=12, fontweight='bold')
+        ax.grid(axis='x', alpha=0.3)
+        st.pyplot(fig)
+    
+    st.markdown('---')
+    
+    # More visualizations
+    col_viz3, col_viz4 = st.columns(2)
+    
+    # Visualization 3: Property Type Distribution
+    with col_viz3:
+        st.markdown('**Property Type Distribution**')
+        
+        category_data_viz = data[data['Price_Category'] == best_pred_category]
+        type_counts = category_data_viz['Type'].value_counts()
+        
+        # Highlight selected type
+        colors_type = []
+        for ptype in type_counts.index:
+            if ptype == selected_type:
+                colors_type.append('#FF6B6B')
+            else:
+                colors_type.append('#70AD47')
+        
+        fig, ax = plt.subplots(figsize=(7, 4))
+        bars = ax.bar(range(len(type_counts)), type_counts.values, color=colors_type, edgecolor='black', linewidth=1)
+        
+        # Add value labels
+        for bar in bars:
+            height = bar.get_height()
+            ax.text(bar.get_x() + bar.get_width()/2., height/2.,
+                   f'{int(height)}',
+                   ha='center', va='center', fontweight='bold', color='white', fontsize=10)
+        
+        ax.set_xticks(range(len(type_counts)))
+        ax.set_xticklabels(type_counts.index, rotation=45, ha='right')
+        ax.set_ylabel('Count')
+        ax.set_title(f'{best_category_label} Category - Property Types', fontsize=12, fontweight='bold')
+        ax.grid(axis='y', alpha=0.3)
+        st.pyplot(fig)
+    
+    # Visualization 4: Tenure Distribution
+    with col_viz4:
+        st.markdown('**Tenure Distribution**')
+        
+        category_data_viz = data[data['Price_Category'] == best_pred_category]
+        tenure_counts = category_data_viz['Tenure'].value_counts()
+        
+        # Highlight selected tenure
+        colors_tenure = []
+        for tenure in tenure_counts.index:
+            if tenure == selected_tenure:
+                colors_tenure.append('#FF6B6B')
+            else:
+                colors_tenure.append('#FFA500')
+        
+        fig, ax = plt.subplots(figsize=(7, 4))
+        bars = ax.bar(range(len(tenure_counts)), tenure_counts.values, color=colors_tenure, edgecolor='black', linewidth=1)
+        
+        # Add value labels
+        for bar in bars:
+            height = bar.get_height()
+            ax.text(bar.get_x() + bar.get_width()/2., height/2.,
+                   f'{int(height)}',
+                   ha='center', va='center', fontweight='bold', color='white', fontsize=10)
+        
+        ax.set_xticks(range(len(tenure_counts)))
+        ax.set_xticklabels(tenure_counts.index, rotation=45, ha='right')
+        ax.set_ylabel('Count')
+        ax.set_title(f'{best_category_label} Category - Tenure Types', fontsize=12, fontweight='bold')
+        ax.grid(axis='y', alpha=0.3)
+        st.pyplot(fig)
+    
+    st.markdown('---')
+    
     # Show similar properties if found
     if len(similar_properties) > 0:
         st.subheader('📊 Similar Properties in Dataset')
         st.dataframe(
             similar_properties[['Township', 'Area', 'State', 'Tenure', 'Type', 'Median_Price', 'Median_PSF', 'Transactions', 'Price_Category']].head(5),
             use_container_width=True
-        )
+        )
+
