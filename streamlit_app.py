@@ -228,13 +228,59 @@ with tab0:
     st.markdown('---')
     
     st.subheader('📊 Dataset Overview')
-    col1, col2, col3 = st.columns(3)
+    st.write("""
+    The dataset consists of **2,000 records**, with each record representing a property transaction. 
+    The dataset contains comprehensive information about Malaysian residential properties, enabling detailed analysis 
+    of housing price patterns and market trends across different regions and property types.
+    """)
+    
+    col1, col2 = st.columns(2)
     with col1:
         st.metric('Total Records', len(data))
     with col2:
-        st.metric('Features', len(data.columns))
-    with col3:
-        st.metric('Price Range', f"RM {data['Median_Price'].min():.0f} - RM {data['Median_Price'].max():.0f}")
+        st.metric('Total Attributes', len(data.columns))
+    
+    st.markdown('---')
+    
+    st.subheader('📋 Dataset Attributes')
+    st.write("""
+    The main attributes included in the dataset are:
+    """)
+    
+    attributes_info = pd.DataFrame({
+        'Attribute': [
+            'Township',
+            'Area',
+            'State',
+            'Tenure',
+            'Type',
+            'Median_Price',
+            'Median_PSF',
+            'Transactions'
+        ],
+        'Description': [
+            'Location of the property',
+            'District or region',
+            'State in Malaysia',
+            'Ownership type (Freehold / Leasehold)',
+            'Property type (e.g., Terrace House, Cluster House)',
+            'Median house price (Target Variable)',
+            'Median price per square foot',
+            'Number of transactions'
+        ],
+        'Type': [
+            'Categorical',
+            'Categorical',
+            'Categorical',
+            'Categorical',
+            'Categorical',
+            'Numerical',
+            'Numerical',
+            'Numerical'
+        ]
+    })
+    
+    st.dataframe(attributes_info, use_container_width=True, hide_index=True)
     
     st.markdown('---')
     
@@ -266,27 +312,6 @@ with tab0:
             ]
         })
         st.dataframe(price_stats, use_container_width=True, hide_index=True)
-    
-    st.markdown('---')
-    
-    st.subheader('📋 Features Used')
-    features_list = data.drop(columns=['Median_Price', 'Price_Category']).columns.tolist()
-    
-    col_features1, col_features2 = st.columns(2)
-    
-    with col_features1:
-        st.write("**Numerical Features**")
-        numerical_features = ['Median_PSF', 'Transactions']
-        for feat in numerical_features:
-            if feat in features_list:
-                st.write(f"- {feat}")
-    
-    with col_features2:
-        st.write("**Categorical Features**")
-        categorical_features = ['Township', 'Area', 'State', 'Tenure', 'Type']
-        for feat in categorical_features:
-            if feat in features_list:
-                st.write(f"- {feat}")
 
 # ============================================
 # DECISION TREE TAB
