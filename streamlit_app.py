@@ -861,6 +861,50 @@ with tab4:
     
     st.markdown('---')
     
+    # Market Category Breakdown
+    st.subheader('📊 Market Category Breakdown')
+    
+    category_counts = data['Price_Category'].value_counts().sort_index()
+    total_properties = category_counts.sum()
+    category_percentages = (category_counts / total_properties * 100).round(2)
+    
+    breakdown_df = pd.DataFrame({
+        'Category': ['Low', 'Medium', 'High'],
+        'Count': [category_counts.get(i, 0) for i in range(3)],
+        'Percentage': [category_percentages.get(i, 0) for i in range(3)]
+    })
+    
+    st.dataframe(breakdown_df, use_container_width=True, hide_index=True)
+    
+    # Visualization: Category Breakdown with Percentage
+    fig, ax = plt.subplots(figsize=(8, 5))
+    colors_breakdown = []
+    for i in range(3):
+        if i == model_pred_category:
+            colors_breakdown.append('#FF6B6B')  # Red for predicted
+        else:
+            colors_breakdown.append('#B8B8B8')  # Gray for others
+    
+    bars = ax.bar(['Low', 'Medium', 'High'], 
+                  [category_counts.get(i, 0) for i in range(3)],
+                  color=colors_breakdown, edgecolor='black', linewidth=1.5)
+    
+    # Add percentage labels on bars
+    for i, bar in enumerate(bars):
+        height = bar.get_height()
+        percentage = category_percentages.get(i, 0)
+        ax.text(bar.get_x() + bar.get_width()/2., height/2.,
+               f'{int(height)}\n({percentage:.1f}%)',
+               ha='center', va='center', fontweight='bold', color='white', fontsize=11)
+    
+    ax.set_title(f'Price Category Distribution - Your Property: {model_category_label}', fontsize=12, fontweight='bold')
+    ax.set_ylabel('Number of Properties')
+    ax.set_xlabel('Price Category')
+    ax.grid(axis='y', alpha=0.3)
+    st.pyplot(fig)
+    
+    st.markdown('---')
+    
     # Model Performance Analysis
     st.subheader(f'📊 {selected_model} - Model Performance Metrics (Predicted: {model_category_label})')
     
@@ -934,48 +978,31 @@ with tab4:
     ax.set_ylabel("Classes")
     st.pyplot(fig)
     
-    st.markdown('---')
+    # Heatmap 2: Confusion Report
+    fig, ax = plt.subplots(figsize=(8, 4))
+    confusion_details = []
+    for i, label in enumerate(labels):
+        TP = model_cm[i, i]
+        FN = model_cm[i, :].sum() - TP
+        FP = model_cm[:, i].sum() - TP
+        TN = model_cm.sum() - (TP + FP + FN)
+        confusion_details.append([TP, FP, FN, TN])
     
-    # Market Category Breakdown
-    st.subheader('📊 Market Category Breakdown')
+    confusion_report_heatmap = pd.DataFrame(
+        confusion_details,
+        index=labels,
+        columns=['TP', 'FP', 'FN', 'TN']
+    )
     
-    category_counts = data['Price_Category'].value_counts().sort_index()
-    total_properties = category_counts.sum()
-    category_percentages = (category_counts / total_properties * 100).round(2)
-    
-    breakdown_df = pd.DataFrame({
-        'Category': ['Low', 'Medium', 'High'],
-        'Count': [category_counts.get(i, 0) for i in range(3)],
-        'Percentage': [category_percentages.get(i, 0) for i in range(3)]
-    })
-    
-    st.dataframe(breakdown_df, use_container_width=True, hide_index=True)
-    
-    # Visualization: Category Breakdown with Percentage
-    fig, ax = plt.subplots(figsize=(8, 5))
-    colors_breakdown = []
-    for i in range(3):
-        if i == model_pred_category:
-            colors_breakdown.append('#FF6B6B')  # Red for predicted
-        else:
-            colors_breakdown.append('#B8B8B8')  # Gray for others
-    
-    bars = ax.bar(['Low', 'Medium', 'High'], 
-                  [category_counts.get(i, 0) for i in range(3)],
-                  color=colors_breakdown, edgecolor='black', linewidth=1.5)
-    
-    # Add percentage labels on bars
-    for i, bar in enumerate(bars):
-        height = bar.get_height()
-        percentage = category_percentages.get(i, 0)
-        ax.text(bar.get_x() + bar.get_width()/2., height/2.,
-               f'{int(height)}\n({percentage:.1f}%)',
-               ha='center', va='center', fontweight='bold', color='white', fontsize=11)
-    
-    ax.set_title(f'Price Category Distribution - Your Property: {model_category_label}', fontsize=12, fontweight='bold')
-    ax.set_ylabel('Number of Properties')
-    ax.set_xlabel('Price Category')
-    ax.grid(axis='y', alpha=0.3)
+    sns.heatmap(
+        confusion_report_heatmap,
+        annot=True,
+        fmt='d',
+        cmap='Oranges',
+        linewidths=0.5,
+        ax=ax
+    )
+    ax.set_title(f"Confusion Report Heatmap ({selected_model})")
+    ax.set_xlabel("Metrics (TP, FP, FN, TN)")
+    ax.set_ylabel("Classes")
     st.pyplot(fig)
-    
-    st.markdown('---')
