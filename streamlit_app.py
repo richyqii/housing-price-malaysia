@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.ticker as mtick
 import seaborn as sns
 from pathlib import Path
 from sklearn.model_selection import train_test_split, GridSearchCV, StratifiedKFold
@@ -203,7 +204,7 @@ svm_model, svm_train_pred, svm_test_pred, svm_test_proba, svm_best_params, svm_b
 # =========================
 # Create tabs for each model
 # =========================
-tab0, tab1, tab2, tab3, tab4 = st.tabs(["📋 Project Overview", "🌳 Decision Tree", "🧠 Artificial Neural Network", "🤖 Support Vector Machine", "🔍 Price Filter"])
+tab0, tab1, tab2, tab3, tab4, tab5 = st.tabs(["📋 Project Overview", "🌳 Decision Tree", "🧠 Artificial Neural Network", "🤖 Support Vector Machine", "📊 Comparison between Models", "🔍 Price Filter"])
 
 labels = ['Low', 'Medium', 'High']
 
@@ -872,9 +873,203 @@ with tab3:
     st.pyplot(fig)
 
 # ============================================
-# PRICE FILTER & PREDICTION TAB
+# COMPARISON BETWEEN MODELS TAB
 # ============================================
 with tab4:
+    st.header("📊 Comparison between Models")
+    st.markdown("---")
+    
+    # ============================================
+    # MODEL COMPARISON TABLE
+    # ============================================
+    st.subheader("Model Comparison Table")
+    
+    # Calculate metrics for all three models
+    dt_test_acc = accuracy_score(y_test, dt_test_pred)
+    dt_mse = mean_squared_error(y_test, dt_test_pred)
+    dt_rmse = np.sqrt(dt_mse)
+    
+    ann_test_acc = accuracy_score(y_test, ann_test_pred)
+    ann_mse = mean_squared_error(y_test, ann_test_pred)
+    ann_rmse = np.sqrt(ann_mse)
+    
+    svm_test_acc = accuracy_score(y_test, svm_test_pred)
+    svm_mse = mean_squared_error(y_test, svm_test_pred)
+    svm_rmse = np.sqrt(svm_mse)
+    
+    # Create comparison dataframe
+    comparison_results = pd.DataFrame({
+        'Model': ['Decision Tree', 'ANN', 'SVM'],
+        'Accuracy': [dt_test_acc, ann_test_acc, svm_test_acc],
+        'MSE': [dt_mse, ann_mse, svm_mse],
+        'RMSE': [dt_rmse, ann_rmse, svm_rmse]
+    }).round(4)
+    
+    st.dataframe(comparison_results, use_container_width=True, hide_index=True)
+    
+    # Best/Worst Models
+    st.markdown('---')
+    st.subheader("Best & Worst Models")
+    
+    best_accuracy_model = comparison_results.loc[comparison_results['Accuracy'].idxmax(), 'Model']
+    best_mse_model = comparison_results.loc[comparison_results['MSE'].idxmin(), 'Model']
+    best_rmse_model = comparison_results.loc[comparison_results['RMSE'].idxmin(), 'Model']
+    
+    worst_accuracy_model = comparison_results.loc[comparison_results['Accuracy'].idxmin(), 'Model']
+    worst_mse_model = comparison_results.loc[comparison_results['MSE'].idxmax(), 'Model']
+    worst_rmse_model = comparison_results.loc[comparison_results['RMSE'].idxmax(), 'Model']
+    
+    col_best1, col_best2 = st.columns(2)
+    
+    with col_best1:
+        st.write("**Best Models**")
+        st.write(f"- Best Accuracy: **{best_accuracy_model}**")
+        st.write(f"- Best MSE (Lowest): **{best_mse_model}**")
+        st.write(f"- Best RMSE (Lowest): **{best_rmse_model}**")
+    
+    with col_best2:
+        st.write("**Worst Models**")
+        st.write(f"- Worst Accuracy: **{worst_accuracy_model}**")
+        st.write(f"- Worst MSE (Highest): **{worst_mse_model}**")
+        st.write(f"- Worst RMSE (Highest): **{worst_rmse_model}**")
+    
+    st.markdown('---')
+    
+    # ============================================
+    # TOTAL ACCURACY COMPARISON
+    # ============================================
+    st.subheader("1️⃣ Total Accuracy Comparison")
+    
+    dt_total_acc = accuracy_score(
+        pd.concat([y_train, y_test]),
+        np.concatenate([dt_train_pred, dt_test_pred])
+    )
+    ann_total_acc = accuracy_score(
+        pd.concat([y_train, y_test]),
+        np.concatenate([ann_train_pred, ann_test_pred])
+    )
+    svm_total_acc = accuracy_score(
+        pd.concat([y_train, y_test]),
+        np.concatenate([svm_train_pred, svm_test_pred])
+    )
+    
+    model_accuracies = pd.DataFrame({
+        'Model': ['Decision Tree', 'Artificial Neural Network', 'Support Vector Machine'],
+        'Total Accuracy': [dt_total_acc, ann_total_acc, svm_total_acc]
+    })
+    
+    fig, ax = plt.subplots(figsize=(10, 6))
+    ax = sns.barplot(
+        x='Model',
+        y='Total Accuracy',
+        data=model_accuracies,
+        palette='viridis',
+        ax=ax
+    )
+    
+    ax.set_ylim(0, 1)
+    ax.set_title('Comparison of Model Total Accuracies', fontsize=14, fontweight='bold')
+    ax.set_xlabel('Machine Learning Model')
+    ax.set_ylabel('% of Total Accuracy')
+    ax.yaxis.set_major_formatter(mtick.PercentFormatter(xmax=1.0))
+    
+    # Add values on top of bars
+    for p in ax.patches:
+        height = p.get_height()
+        ax.annotate(
+            f'{height:.2%}',
+            (p.get_x() + p.get_width()/2, height),
+            ha='center',
+            va='bottom',
+            fontweight='bold'
+        )
+    
+    ax.grid(axis='y', linestyle='--', alpha=0.7)
+    st.pyplot(fig)
+    
+    st.markdown('---')
+    
+    # ============================================
+    # MSE COMPARISON
+    # ============================================
+    st.subheader("2️⃣ Mean Squared Error (MSE) Comparison")
+    
+    model_mse_df = pd.DataFrame({
+        'Model': ['Decision Tree', 'Artificial Neural Network', 'Support Vector Machine'],
+        'Mean Squared Error': [dt_mse, ann_mse, svm_mse]
+    })
+    
+    fig, ax = plt.subplots(figsize=(10, 6))
+    ax = sns.barplot(
+        x='Model',
+        y='Mean Squared Error',
+        data=model_mse_df,
+        palette='viridis',
+        ax=ax
+    )
+    
+    ax.set_title('Comparison of Model Mean Squared Error (MSE)', fontsize=14, fontweight='bold')
+    ax.set_xlabel('Machine Learning Model')
+    ax.set_ylabel('Mean Squared Error')
+    ax.yaxis.set_major_formatter(mtick.PercentFormatter(xmax=1.0))
+    
+    # Add values on top
+    for p in ax.patches:
+        height = p.get_height()
+        ax.annotate(
+            f"{height:.4f}",
+            (p.get_x() + p.get_width()/2, height),
+            ha='center',
+            va='bottom',
+            fontweight='bold'
+        )
+    
+    ax.grid(axis='y', linestyle='--', alpha=0.7)
+    st.pyplot(fig)
+    
+    st.markdown('---')
+    
+    # ============================================
+    # RMSE COMPARISON
+    # ============================================
+    st.subheader("3️⃣ Root Mean Squared Error (RMSE) Comparison")
+    
+    model_rmse_df = pd.DataFrame({
+        'Model': ['Decision Tree', 'Artificial Neural Network', 'Support Vector Machine'],
+        'RMSE': [dt_rmse, ann_rmse, svm_rmse]
+    })
+    
+    fig, ax = plt.subplots(figsize=(10, 6))
+    ax = sns.barplot(
+        x='Model',
+        y='RMSE',
+        data=model_rmse_df,
+        palette='viridis',
+        ax=ax
+    )
+    
+    ax.set_title('Comparison of Model Root Mean Squared Error (RMSE)', fontsize=14, fontweight='bold')
+    ax.set_xlabel('Machine Learning Model')
+    ax.set_ylabel('RMSE (Lower is Better)')
+    
+    # Add values on top
+    for p in ax.patches:
+        height = p.get_height()
+        ax.annotate(
+            f"{height:.4f}",
+            (p.get_x() + p.get_width()/2, height),
+            ha='center',
+            va='bottom',
+            fontweight='bold'
+        )
+    
+    ax.grid(axis='y', linestyle='--', alpha=0.7)
+    st.pyplot(fig)
+
+# ============================================
+# PRICE FILTER & PREDICTION TAB
+# ============================================
+with tab5:
     st.header('🔍 Filter & Predict Housing Price')
     st.markdown('**Select property features below to get predictions**')
     st.markdown('---')
