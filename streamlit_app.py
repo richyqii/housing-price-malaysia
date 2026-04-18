@@ -862,7 +862,7 @@ with tab4:
     st.markdown('---')
     
     # Model Performance Analysis
-    st.subheader(f'📊 {selected_model} - Model Performance Metrics')
+    st.subheader(f'📊 {selected_model} - Model Performance Metrics (Predicted: {model_category_label})')
     
     # Classification Report
     model_class_report = pd.DataFrame(
@@ -873,35 +873,14 @@ with tab4:
         )
     ).transpose()
     
-    # Display metrics for each class
-    st.write("**Individual Class Metrics:**")
-    
-    # Low Class
-    col_low1, col_low2, col_low3 = st.columns(3)
-    with col_low1:
-        st.metric('Low - Precision', f"{model_class_report.loc['Low', 'precision']*100:.2f}%")
-    with col_low2:
-        st.metric('Low - Recall', f"{model_class_report.loc['Low', 'recall']*100:.2f}%")
-    with col_low3:
-        st.metric('Low - F1-Score', f"{model_class_report.loc['Low', 'f1-score']*100:.2f}%")
-    
-    # Medium Class
-    col_med1, col_med2, col_med3 = st.columns(3)
-    with col_med1:
-        st.metric('Medium - Precision', f"{model_class_report.loc['Medium', 'precision']*100:.2f}%")
-    with col_med2:
-        st.metric('Medium - Recall', f"{model_class_report.loc['Medium', 'recall']*100:.2f}%")
-    with col_med3:
-        st.metric('Medium - F1-Score', f"{model_class_report.loc['Medium', 'f1-score']*100:.2f}%")
-    
-    # High Class
-    col_high1, col_high2, col_high3 = st.columns(3)
-    with col_high1:
-        st.metric('High - Precision', f"{model_class_report.loc['High', 'precision']*100:.2f}%")
-    with col_high2:
-        st.metric('High - Recall', f"{model_class_report.loc['High', 'recall']*100:.2f}%")
-    with col_high3:
-        st.metric('High - F1-Score', f"{model_class_report.loc['High', 'f1-score']*100:.2f}%")
+    # Display metrics only for predicted category
+    col_pred1, col_pred2, col_pred3 = st.columns(3)
+    with col_pred1:
+        st.metric('Precision', f"{model_class_report.loc[model_category_label, 'precision']*100:.2f}%")
+    with col_pred2:
+        st.metric('Recall', f"{model_class_report.loc[model_category_label, 'recall']*100:.2f}%")
+    with col_pred3:
+        st.metric('F1-Score', f"{model_class_report.loc[model_category_label, 'f1-score']*100:.2f}%")
     
     st.markdown('---')
     
