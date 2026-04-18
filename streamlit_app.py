@@ -324,6 +324,38 @@ with tab0:
     
     st.subheader('📊 Descriptive Statistics (All Columns)')
     st.dataframe(data.describe().round(2), use_container_width=True)
+    
+    st.markdown('---')
+    
+    st.subheader('🔗 Correlation Matrix - Variables Relationship')
+    
+    # Calculate correlation matrix for numerical columns
+    correlation_matrix = data.select_dtypes(include=['float64', 'int64']).corr()
+    
+    # Create a mask for the upper triangle, including the diagonal
+    mask = np.triu(np.ones_like(correlation_matrix, dtype=bool))
+    
+    # Create correlation heatmap
+    fig, ax = plt.subplots(figsize=(10, 8))
+    sns.heatmap(
+        correlation_matrix, 
+        annot=True, 
+        cmap='coolwarm', 
+        fmt='.2f', 
+        linewidths=0.5, 
+        mask=mask,
+        ax=ax,
+        cbar_kws={'label': 'Correlation Coefficient'}
+    )
+    ax.set_title('Correlation Matrix Heatmap (Lower Triangle Only)', fontsize=14, fontweight='bold')
+    st.pyplot(fig)
+    
+    st.write("""
+    **Interpretation:**
+    - Values closer to **+1** indicate strong positive correlations (as one variable increases, the other tends to increase)
+    - Values closer to **-1** indicate strong negative correlations (as one variable increases, the other tends to decrease)
+    - Values closer to **0** indicate weak or no correlation between variables
+    """)
 
 # ============================================
 # DECISION TREE TAB
