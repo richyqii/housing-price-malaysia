@@ -866,11 +866,8 @@ with tab4:
     
     st.markdown('---')
     
-    # Additional Predictions Data using Best Model
-    st.subheader('📊 Market Insights - Best Model Analysis')
-    
     # Market Visualizations using Best Model's Prediction
-    st.subheader(f'📊 Market Visualizations ({best_model_name} - Price Category: {best_category_label})')
+    st.subheader(f'📊 Market Visualizations ({best_model_name})')
     
     col_viz1, col_viz2 = st.columns(2)
     
