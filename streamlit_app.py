@@ -864,6 +864,13 @@ with tab4:
     # Model Performance Analysis
     st.subheader(f'📊 {selected_model} - Model Performance Analysis')
     
+    # Calculate overall accuracy
+    model_accuracy = accuracy_score(y_test, model_pred)
+    
+    st.metric('Overall Accuracy', f'{model_accuracy:.1%}')
+    
+    st.markdown('---')
+    
     # Classification Report
     model_class_report = pd.DataFrame(
         classification_report(
@@ -873,8 +880,14 @@ with tab4:
         )
     ).transpose()
     
-    st.subheader('Classification Report')
-    st.dataframe(model_class_report, use_container_width=True)
+    # Convert classification report to percentage format
+    model_class_report_pct = model_class_report.copy()
+    for col in ['precision', 'recall', 'f1-score']:
+        if col in model_class_report_pct.columns:
+            model_class_report_pct[col] = model_class_report_pct[col].apply(lambda x: f'{x*100:.1f}%')
+    
+    st.subheader('Classification Report (%)')
+    st.dataframe(model_class_report_pct[['precision', 'recall', 'f1-score', 'support']], use_container_width=True)
     
     # Confusion Matrix
     st.subheader('Confusion Matrix')
@@ -912,15 +925,18 @@ with tab4:
     # Heatmap 1: Classification Report
     with col_v1:
         fig, ax = plt.subplots(figsize=(8, 5))
+        # Create heatmap data with percentages
+        heatmap_data = model_class_report.iloc[:-3, :-1] * 100  # Exclude support and weighted avg rows, multiply by 100 for percentage
         sns.heatmap(
-            model_class_report.iloc[:-3, :-1],
+            heatmap_data,
             annot=True,
             cmap="YlGnBu",
-            fmt=".2f",
+            fmt=".1f",
+            cbar_kws={'label': 'Percentage (%)'},
             ax=ax
         )
-        ax.set_title(f"Classification Report Heatmap ({selected_model})")
-        ax.set_xlabel("Metrics")
+        ax.set_title(f"Classification Report Heatmap - {selected_model} (%)")
+        ax.set_xlabel("Metrics (%)")
         ax.set_ylabel("Classes")
         st.pyplot(fig)
     
