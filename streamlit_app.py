@@ -873,26 +873,35 @@ with tab4:
         )
     ).transpose()
     
-    # Calculate overall metrics
-    overall_accuracy = accuracy_score(y_test, model_pred)
-    overall_precision = model_class_report.loc['macro avg', 'precision'] * 100
-    overall_recall = model_class_report.loc['macro avg', 'recall'] * 100
-    overall_f1 = model_class_report.loc['macro avg', 'f1-score'] * 100
+    # Display metrics for each class
+    st.write("**Individual Class Metrics:**")
     
-    # Display metrics as percentage cards
-    col_m1, col_m2, col_m3, col_m4 = st.columns(4)
+    # Low Class
+    col_low1, col_low2, col_low3 = st.columns(3)
+    with col_low1:
+        st.metric('Low - Precision', f"{model_class_report.loc['Low', 'precision']*100:.2f}%")
+    with col_low2:
+        st.metric('Low - Recall', f"{model_class_report.loc['Low', 'recall']*100:.2f}%")
+    with col_low3:
+        st.metric('Low - F1-Score', f"{model_class_report.loc['Low', 'f1-score']*100:.2f}%")
     
-    with col_m1:
-        st.metric('Accuracy', f'{overall_accuracy*100:.2f}%')
+    # Medium Class
+    col_med1, col_med2, col_med3 = st.columns(3)
+    with col_med1:
+        st.metric('Medium - Precision', f"{model_class_report.loc['Medium', 'precision']*100:.2f}%")
+    with col_med2:
+        st.metric('Medium - Recall', f"{model_class_report.loc['Medium', 'recall']*100:.2f}%")
+    with col_med3:
+        st.metric('Medium - F1-Score', f"{model_class_report.loc['Medium', 'f1-score']*100:.2f}%")
     
-    with col_m2:
-        st.metric('Precision', f'{overall_precision:.2f}%')
-    
-    with col_m3:
-        st.metric('Recall', f'{overall_recall:.2f}%')
-    
-    with col_m4:
-        st.metric('F1-Score', f'{overall_f1:.2f}%')
+    # High Class
+    col_high1, col_high2, col_high3 = st.columns(3)
+    with col_high1:
+        st.metric('High - Precision', f"{model_class_report.loc['High', 'precision']*100:.2f}%")
+    with col_high2:
+        st.metric('High - Recall', f"{model_class_report.loc['High', 'recall']*100:.2f}%")
+    with col_high3:
+        st.metric('High - F1-Score', f"{model_class_report.loc['High', 'f1-score']*100:.2f}%")
     
     st.markdown('---')
     
